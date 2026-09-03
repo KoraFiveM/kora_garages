@@ -44,7 +44,9 @@ end
 -- Deferred to the login gate rather than run at script load. Blips created
 -- before the player exists briefly attach to nothing, and on a character switch
 -- the set is rebuilt so a job/gang garage's blip follows the new character.
-AddEventHandler('QBCore:Client:OnPlayerLoaded', createBlips)
+-- qbcore delivers this legacy lifecycle signal with TriggerClientEvent, so it
+-- must be registered as a network event rather than a local-only handler.
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', createBlips)
 AddEventHandler('qbcore:client:playerLoaded', createBlips)
 
 AddEventHandler('onClientResourceStart', function(resource)
