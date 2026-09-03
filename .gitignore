@@ -1,0 +1,3 @@
+# Local JavaScript toolchain; the committed Vite build under web/build is the
+# runtime artifact FiveM actually serves (see fxmanifest.lua `files`).
+web/node_modules/
