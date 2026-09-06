@@ -43,9 +43,8 @@ server_scripts {
     'server/compat.lua',
 }
 
--- state.lua owns the local cache the UI renders; ui.lua registers the NUI
--- bridge everything pushes through. actions.lua drives take-out/store and needs
--- both. zones/blips/exports are entry points into everything above them.
+-- state.lua owns the local cache that the shared qblib AppShell renders.
+-- actions.lua drives take-out/store and zones/blips/exports are entry points.
 client_scripts {
     '@qbtheme/client/bridge.lua',
     'client/state.lua',
@@ -54,15 +53,4 @@ client_scripts {
     'client/zones.lua',
     'client/blips.lua',
     'client/exports.lua',
-}
-
-ui_page 'web/build/index.html'
-
-files {
-    'web/build/index.html',
-    -- A bare trailing '**' does NOT match files in FiveM's resource globber --
-    -- it needs the '/*'. With 'web/build/assets/**' the hashed JS/CSS bundles
-    -- are silently never served: index.html loads, its <script> 404s, React
-    -- never mounts, and the UI is simply invisible with no error anywhere.
-    'web/build/assets/**/*',
 }
