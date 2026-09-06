@@ -93,34 +93,38 @@ exactly what this resource must not do. See "Known gaps" below.
 
 ## Blips and the pause-map legend
 
-Every blip is created with `category = 11` and the label from its **type**
-(`Config.garageTypes[type].blipLabel`), not from the garage. Category 11 groups
-blips in the pause-map legend under a heading taken from their own *name*, so an
-identical label across a set collapses seven garages into one legend row. A
-per-garage label would split the group and undo the entire mechanism — see
-`qblib/modules/blips/docs.md`.
+Every blip is created with `category = 2` and the label from its **type**
+(`Config.garageTypes[type].blipLabel`), not from the garage. That places Garage,
+Job Garage, Gang Garage, and Impound Lot in their own pause-map legend entries
+instead of GTA's `Owned Property` category — see `qblib/modules/blips/docs.md`.
 
-`public` and `private` deliberately share the heading `Garage`: to a player, both
-are just a garage. The specific name still reaches them as the qbtarget prompt
-they read when they walk up to it.
+`public` and `private` deliberately share the label `Garage`: to a player, both
+are just a garage. The specific name still appears in whichever interaction
+prompt the server has configured.
 
 ---
 
 ## Interaction
 
-One `exports.qbtarget:addBoxZone` per garage, re-registered on a `qbtarget`
-restart. Note the signature: the **zone** APIs take a single options object with
-an `options` key inside it, unlike `addEntity`/`addModel`, which take the option
-array positionally. Passing the array positionally registers a zone with no
-options at all — the box exists, nothing ever prompts, and there is no error to
-find.
+`Config.interaction.mode` selects one of two client presentations while keeping
+the same server-side distance, entitlement and routing-bucket checks:
+
+| Mode | Player flow |
+| --- | --- |
+| `target` (default) | Aim at the garage zone with qbtarget, then release Alt. |
+| `interact` | Enter the garage box, then press E on qblib's nearby selector. |
+
+Target registrations are removed before they are rebuilt, so a repeated
+registration cannot leave two identical options at Legion Square. They are also
+re-created after a `qbtarget` restart. Interact zones use stable
+`qbgarages:<garage-id>` names, which qblib replaces rather than duplicates.
 
 `canInteract` is a UX convenience only. It reads the local `PlayerData` mirror so
 a motor pool does not prompt every passing civilian; the real gate is
-`Garages.access.entitled`, re-read from qbcore server-side. The zone's own
-`distance` is deliberately wider than `Config.interaction.distance` — the box has
-to cover the apron so the prompt appears, while the tighter server distance is
-what authorises the action. **"The prompt appeared" is never proof of range.**
+`Garages.access.entitled`, re-read from qbcore server-side. The interaction box
+may cover more of the apron than `Config.interaction.distance`; the tighter
+server distance is what authorises the action. **"The prompt appeared" is never
+proof of range.**
 
 ---
 

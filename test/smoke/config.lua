@@ -11,6 +11,11 @@ dofile('shared/garages.lua')
 
 local S = Garages.shared
 
+h.test('the interaction mode selects a supported provider', function()
+    h.assertTrue(Config.interaction.mode == 'target' or Config.interaction.mode == 'interact',
+        "interaction mode must be 'target' or 'interact'")
+end)
+
 h.test('every garage names a configured type', function()
     for id, garage in pairs(Config.garages) do
         h.assertTrue(Config.garageTypes[garage.type] ~= nil,
@@ -74,11 +79,9 @@ h.test('spawn points are reachable from the garage marker', function()
     end
 end)
 
-h.test('every garage type shares one blip label, and uses the grouped category', function()
-    -- category = 11 groups blips under a heading taken from their own NAME, so
-    -- the label has to be per-TYPE. A per-garage label splits the group and
-    -- undoes the entire mechanism -- one legend row per garage instead of one
-    -- per type. See qblib/modules/blips/docs.md.
+h.test('every garage type supplies a label for the map legend', function()
+    -- client/blips.lua assigns category 2, which lists these labels outside
+    -- GTA's Owned Property group. See qblib/modules/blips/docs.md.
     for name, policy in pairs(Config.garageTypes) do
         h.assertEqual(type(policy.blipLabel), 'string', name .. ' needs a shared blipLabel')
         h.assertEqual(type(policy.blipSprite), 'number', name .. ' needs a blip sprite')
@@ -87,10 +90,10 @@ h.test('every garage type shares one blip label, and uses the grouped category',
             name .. ' must show either garaged or impounded vehicles')
     end
 
-    -- The two street types deliberately share ONE heading: to a player, a public
+    -- The two street types deliberately share ONE label: to a player, a public
     -- and a private garage are both just "a garage".
     h.assertEqual(Config.garageTypes.public.blipLabel, Config.garageTypes.private.blipLabel,
-        'public and private collapse into one legend heading on purpose')
+        'public and private share one map label on purpose')
 end)
 
 h.test('a job garage names a job, a gang garage names a gang', function()

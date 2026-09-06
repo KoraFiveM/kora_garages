@@ -55,11 +55,10 @@ ownership proof of its own, so honouring it would be a free un-impound.
 
 ## Blips
 
-Every blip uses `category = 11` with the label from
-`Config.garageTypes[type].blipLabel`. The label must stay **per-type and
-identical across the set** — that identical name is the pause-map legend heading,
-and a per-garage label splits the group and undoes the grouping entirely. See
-`qblib/modules/blips/docs.md`.
+Every blip uses `category = 2` with the label from
+`Config.garageTypes[type].blipLabel`. This makes Garage, Job Garage, Gang Garage,
+and Impound Lot separate pause-map legend entries rather than GTA's `Owned
+Property` group. See `qblib/modules/blips/docs.md`.
 
 ## Tests
 

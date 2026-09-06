@@ -9,7 +9,8 @@
 -- same rationale is documented at the head of qbhud/client/hud.lua and
 -- qbdispatch/client/ui.lua.
 --
--- QB.theme / QB.blips / QB.vehicle / QB.callback stay on the proxy -- they are
+-- QB.blips / QB.vehicle / QB.callback stay on the proxy; qbtheme is imported
+-- directly -- they are
 -- pure Lua (or plain natives) and touch no NUI native.
 
 Garages = Garages or {}
@@ -63,10 +64,7 @@ end
 
 function Garages.ui.pushTheme()
     local accent = Config.ui.accent
-    local ok, tokens = pcall(function()
-        return QB.theme.tokens(type(accent) == 'string' and accent or nil)
-    end)
-    if ok and type(tokens) == 'table' then Garages.ui.send('qbgarages:theme', tokens) end
+    QBTheme.apply(type(accent) == 'string' and accent or nil)
 end
 
 ---Fetches the listing for `garageId` and opens the panel on success.

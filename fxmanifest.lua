@@ -18,6 +18,7 @@ provide 'qb-garages'
 -- supplies the interaction zones registered at client script load time, so it
 -- must be RUNNING before those registrations -- `dependency` creates that
 -- start-order edge regardless of the server.cfg `ensure` position.
+dependency 'qbtheme'
 dependency 'qblib'
 dependency 'qbcore'
 dependency 'qbtarget'
@@ -46,6 +47,7 @@ server_scripts {
 -- bridge everything pushes through. actions.lua drives take-out/store and needs
 -- both. zones/blips/exports are entry points into everything above them.
 client_scripts {
+    '@qbtheme/client/bridge.lua',
     'client/state.lua',
     'client/ui.lua',
     'client/actions.lua',

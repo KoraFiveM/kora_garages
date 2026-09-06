@@ -4,7 +4,7 @@ export interface NuiWireMessage<T = unknown> {
     data: T
 }
 
-/** Semantic HSL tokens from Lua's QB.theme.tokens(), applied as CSS variables. */
+/** Semantic HSL tokens supplied by qbtheme, applied as CSS variables. */
 export type ThemeTokens = Record<string, string>
 
 /**

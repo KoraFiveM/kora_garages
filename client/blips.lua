@@ -1,16 +1,7 @@
--- Map blips, one per garage.
---
--- THE LEGEND GROUPING IS THE POINT. Seven garages would otherwise be seven
--- identical rows in the pause-map legend. `category = 11` is the grouped
--- category: the game collapses every blip in it under one heading taken from the
--- blips' own NAME -- so the heading comes from the garage TYPE
--- (Config.garageTypes[type].blipLabel) and is deliberately identical across
--- every garage of that type. A per-garage label would split the group and undo
--- the whole mechanism. See qblib/modules/blips/docs.md.
---
--- The per-garage label still reaches the player: it is the qbtarget prompt they
--- read when they walk up to it, which is where a specific name is actually
--- useful.
+-- Map blips, one per garage. Category 2 lists each service label in the
+-- pause-map legend rather than placing every garage in GTA's built-in "Owned
+-- Property" category (11). Type labels make the entries clear: "Garage", "Job
+-- Garage", and "Impound Lot".
 
 local created = {}
 
@@ -24,17 +15,16 @@ local function createBlips()
 
     for _, garage in pairs(Config.garages) do
         local policy = Config.garageTypes[garage.type]
-        -- A garage with an unknown type gets no blip rather than a blip under
-        -- some other type's heading: an unlabelled blip in category 11 would
-        -- join whichever group the game happens to put it in.
+        -- A garage with an unknown type gets no blip rather than an unlabelled
+        -- marker that players cannot identify in the legend.
         if policy then
             local blip = QB.blips.create(garage.coords, {
                 sprite = policy.blipSprite,
                 color = policy.blipColor,
                 scale = 0.8,
                 shortRange = true,
-                label = policy.blipLabel, -- identical across the type: this IS the heading
-                category = 11,
+                label = policy.blipLabel,
+                category = 2,
             })
             if blip then created[#created + 1] = blip end
         end

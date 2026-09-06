@@ -10,7 +10,10 @@ Config.debug = false -- draws the qbtarget zone outlines and enables /garagedebu
 -- to cover the parking apron so the prompt appears, while the distance is what
 -- actually authorises the action.
 Config.interaction = {
-    zoneSize = { x = 6.0, y = 6.0, z = 3.0 }, -- qbtarget box covering the apron; per-garage `size` overrides it
+    -- `target` uses qbtarget's aim/Alt flow. `interact` opens qblib's nearby
+    -- selector when the player enters the box, with E confirming the option.
+    mode = 'target',
+    zoneSize = { x = 6.0, y = 6.0, z = 3.0 }, -- box covering the apron; per-garage `size` overrides it
     distance = 4.0,                           -- metres; the server refuses any action beyond this from the garage point
     -- Metres a stored vehicle may be from the garage point. Wider than
     -- `distance` on purpose: a player standing at the marker can legitimately
@@ -28,18 +31,16 @@ Config.interaction = {
 --
 -- A type is a POLICY, not a location: it decides who may use a garage, whether
 -- the vehicles listed there are the ones garaged or the ones impounded, and
--- which pause-map legend heading its blips collapse under.
+-- which pause-map legend label its blips use.
 --
--- `blipLabel` is shared across every garage of a type on purpose. With
--- `category = 11` the game groups blips in the pause-map legend under a heading
--- taken from their own NAME, so a differing label splits the group and you get
--- one legend row per garage instead of one per type -- see
--- qblib/modules/blips/docs.md. That is the whole reason the label lives on the
--- type and not on the garage.
+-- `blipLabel` is shared across every garage of a type on purpose. The map uses
+-- category 2 so service labels appear in the legend instead of GTA's "Owned
+-- Property" category. The label therefore lives on the type, not the individual
+-- garage, keeping map terms consistent.
 Config.garageTypes = {
     public = {
         label = 'Public Garage',
-        blipLabel = 'Garage',      -- the legend heading; identical across the set
+        blipLabel = 'Garage',
         blipSprite = 357,
         blipColor = 3,
         -- Lists vehicles whose row is `garaged`; `impounded` ones are hidden
@@ -273,11 +274,8 @@ Config.listing = {
 
 -- --- ui ---------------------------------------------------------------------
 Config.ui = {
-    -- `false` means "follow the server's own accent". QB.theme.tokens() with no
-    -- argument resolves qblib's Config.ui.accentColor -- the body runs in
-    -- QBLIB's Lua VM, so that is qblib's config, not this file's -- which is
-    -- exactly what keeps every framework surface the same colour. Set a
-    -- '#RRGGBB' here only to make garages deliberately differ.
+    -- `false` means follow qbtheme's configured primary. Set a '#RRGGBB' here
+    -- only to make garages deliberately differ.
     accent = false,
 }
 

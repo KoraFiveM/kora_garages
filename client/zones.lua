@@ -1,18 +1,17 @@
--- One qbtarget box zone per garage.
+-- One configurable interaction zone per garage. `target` keeps the qbtarget
+-- aim/Alt flow; `interact` uses qblib's nearby selector and E to confirm.
 --
--- NOTE THE SIGNATURE. The ZONE apis take a SINGLE options object with an
--- `options` key inside it -- `addBoxZone({ coords = .., size = .., options = {
--- .. } })` -- unlike addEntity/addModel, which take the option array
--- positionally as their second argument. Passing the array positionally here
--- registers a zone with no options at all: the box exists, nothing ever
--- prompts, and there is no error to find.
---
--- `canInteract` below is a UX convenience ONLY. It reads the local mirror of
+-- `canInteract` is a UX convenience ONLY. It reads the local mirror of
 -- PlayerData so an officer's motor pool does not prompt every passing civilian;
 -- the real gate is Garages.access.entitled, re-read from qbcore server-side on
 -- every single action. Nothing is authorised by anything in this file.
 
-local registered = {}
+local mode = Config.interaction.mode or 'target'
+assert(mode == 'target' or mode == 'interact',
+    "Config.interaction.mode must be 'target' or 'interact'")
+
+local targetZones = {}
+local interactZones = {}
 
 ---@return table|nil
 local function localJob()
@@ -48,48 +47,102 @@ local function mayPrompt(garage)
     return true
 end
 
-local function registerZones()
-    for id, garage in pairs(Config.garages) do
-        local policy = Config.garageTypes[garage.type]
+---@param id string
+---@param garage table
+---@return table
+local function optionFor(id, garage)
+    local policy = Config.garageTypes[garage.type]
+    local function openGarage()
+        -- The garage ID is a config key resolved on the SERVER. It travels as
+        -- intent only; an invented id is refused as an unknown garage.
+        Garages.ui.open(id)
+    end
 
-        registered[id] = exports.qbtarget:addBoxZone({
+    return {
+        label = policy and policy.shows == 'impounded'
+            and ('Collect from %s'):format(garage.label)
+            or ('Open %s'):format(garage.label),
+        icon = policy and policy.shows == 'impounded' and 'car-front' or 'warehouse',
+        canInteract = function()
+            return mayPrompt(garage)
+        end,
+        -- qbtarget dispatches `onSelect`; QB.interact dispatches `action`.
+        -- Supplying the same closure under both names keeps the two providers
+        -- behaviourally identical without routing through a client event.
+        onSelect = openGarage,
+        action = openGarage,
+    }
+end
+
+local function clearTargetZones()
+    for _, registrationId in pairs(targetZones) do
+        pcall(function() exports.qbtarget:removeZone(registrationId) end)
+    end
+    targetZones = {}
+end
+
+local function clearInteractZones()
+    for _, zoneName in pairs(interactZones) do
+        pcall(function() QB.interact.removeZone(zoneName) end)
+    end
+    interactZones = {}
+end
+
+local function registerTargetZones()
+    -- Re-registration is intentionally idempotent. Without removing the old
+    -- handles first, every repeat adds another identical option at Legion (and
+    -- eventually at every other garage).
+    clearTargetZones()
+
+    for id, garage in pairs(Config.garages) do
+        targetZones[id] = exports.qbtarget:addBoxZone({
             coords = garage.coords,
             size = garage.size or Config.interaction.zoneSize,
-            heading = garage.heading or 0.0,
+            rotation = garage.heading or 0.0,
             debug = Config.debug,
             -- The prompt reach, not the authorisation reach. The server's own
             -- Config.interaction.distance is what decides whether an action is
             -- allowed, and it is deliberately the tighter of the two.
             distance = tonumber(garage.distance) or Config.interaction.distance,
-            options = {
-                {
-                    label = policy and policy.shows == 'impounded'
-                        and ('Collect from %s'):format(garage.label)
-                        or ('Open %s'):format(garage.label),
-                    icon = policy and policy.shows == 'impounded' and 'car-front' or 'warehouse',
-                    canInteract = function()
-                        return mayPrompt(garage)
-                    end,
-                    onSelect = function()
-                        -- The garage ID is a config key resolved on the SERVER.
-                        -- It travels as a string because it is intent; the server
-                        -- looks it up in its own Config.garages, so a client
-                        -- inventing an id gets 'unknown garage'.
-                        Garages.ui.open(id)
-                    end,
-                },
-            },
+            options = { optionFor(id, garage) },
         })
     end
 end
 
-registerZones()
+local function registerInteractZones()
+    clearInteractZones()
+
+    for id, garage in pairs(Config.garages) do
+        local size = garage.size or Config.interaction.zoneSize
+        local zoneName = ('qbgarages:%s'):format(id)
+
+        QB.interact.addBoxZone(zoneName, garage.coords, {
+            x = size.x,
+            y = size.y,
+            z = size.z,
+            w = garage.heading or size.w or 0.0,
+        }, { optionFor(id, garage) }, Config.debug)
+
+        interactZones[id] = zoneName
+    end
+end
+
+if mode == 'target' then
+    registerTargetZones()
+else
+    registerInteractZones()
+end
+
+-- A qbtarget stop destroys its registrations itself. Forget those stale ids so
+-- they can never collide with ids allocated by the newly-started instance.
+AddEventHandler('onClientResourceStop', function(resource)
+    if resource == 'qbtarget' then targetZones = {} end
+end)
 
 -- qbtarget restarting drops every registration it was holding, including ours.
 -- Without this the garages silently stop prompting until this resource is
 -- restarted too -- the same re-registration hook qbpolice and qbclothing use.
 AddEventHandler('onClientResourceStart', function(resource)
-    if resource ~= 'qbtarget' then return end
-    registered = {}
-    registerZones()
+    if resource ~= 'qbtarget' or mode ~= 'target' then return end
+    registerTargetZones()
 end)

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 import { fetchNui } from "./fetchNui"
-import type { GarageState, ThemeTokens } from "./types"
+import type { GarageState } from "./types"
 import { useNuiEvent } from "./useNuiEvent"
 
 const EMPTY: GarageState = { open: false, vehicles: [], busy: false }
@@ -20,18 +20,6 @@ export function GarageProvider({ children }: { children: ReactNode }) {
     // to reason about than reconciling partial updates.
     useNuiEvent<GarageState>("qbgarages:state", (next) => {
         if (next) setState(next)
-    })
-
-    useNuiEvent<ThemeTokens>("qbgarages:theme", (tokens) => {
-        if (!tokens) return
-        // Applied as CSS custom properties rather than rebuilt in JS: the HSL
-        // derivation already happened in Lua (QB.theme.tokens), and setting the
-        // variables recolours every component that uses a semantic token at
-        // once, with no re-render.
-        const root = document.documentElement.style
-        for (const [key, value] of Object.entries(tokens)) {
-            if (typeof value === "string") root.setProperty(`--${key}`, value)
-        }
     })
 
     // Announce the frame is mounted. SendNUIMessage is postMessage-like, not a
