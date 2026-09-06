@@ -46,7 +46,6 @@ server_scripts {
 -- state.lua owns the local cache that the shared qblib AppShell renders.
 -- actions.lua drives take-out/store and zones/blips/exports are entry points.
 client_scripts {
-    '@qbtheme/client/bridge.lua',
     'client/state.lua',
     'client/ui.lua',
     'client/actions.lua',

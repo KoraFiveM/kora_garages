@@ -80,8 +80,8 @@ h.test('spawn points are reachable from the garage marker', function()
 end)
 
 h.test('every garage type supplies a label for the map legend', function()
-    -- client/blips.lua assigns category 2, which lists these labels outside
-    -- GTA's Owned Property group. See qblib/modules/blips/docs.md.
+    -- client/blips.lua uses each label as its named category, grouping every
+    -- matching location. See qblib/modules/blips/docs.md.
     for name, policy in pairs(Config.garageTypes) do
         h.assertEqual(type(policy.blipLabel), 'string', name .. ' needs a shared blipLabel')
         h.assertEqual(type(policy.blipSprite), 'number', name .. ' needs a blip sprite')

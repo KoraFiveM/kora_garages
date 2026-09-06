@@ -1,7 +1,7 @@
--- Map blips, one per garage. Category 2 lists each service label in the
--- pause-map legend rather than placing every garage in GTA's built-in "Owned
--- Property" category (11). Type labels make the entries clear: "Garage", "Job
--- Garage", and "Impound Lot".
+-- Map blips, one per garage. The type label is its named category, so matching
+-- locations share one pause-map legend heading. The individual blip label is
+-- the location name, however: giving every public garage the label "Garage"
+-- leaves the legend full of visually identical entries.
 
 local created = {}
 
@@ -23,8 +23,8 @@ local function createBlips()
                 color = policy.blipColor,
                 scale = 0.8,
                 shortRange = true,
-                label = policy.blipLabel,
-                category = 2,
+                label = garage.label,
+                category = policy.blipLabel,
             })
             if blip then created[#created + 1] = blip end
         end

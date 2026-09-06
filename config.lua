@@ -33,9 +33,9 @@ Config.interaction = {
 -- the vehicles listed there are the ones garaged or the ones impounded, and
 -- which pause-map legend label its blips use.
 --
--- `blipLabel` is shared across every garage of a type on purpose. The map uses
--- category 2 so service labels appear in the legend instead of GTA's "Owned
--- Property" category. The label therefore lives on the type, not the individual
+-- `blipLabel` is shared across every garage of a type on purpose. It is also
+-- used as the named legend category, so matching locations collapse beneath
+-- one heading. The label therefore lives on the type, not the individual
 -- garage, keeping map terms consistent.
 Config.garageTypes = {
     public = {

@@ -93,10 +93,11 @@ exactly what this resource must not do. See "Known gaps" below.
 
 ## Blips and the pause-map legend
 
-Every blip is created with `category = 2` and the label from its **type**
-(`Config.garageTypes[type].blipLabel`), not from the garage. That places Garage,
-Job Garage, Gang Garage, and Impound Lot in their own pause-map legend entries
-instead of GTA's `Owned Property` category — see `qblib/modules/blips/docs.md`.
+Every blip uses its own location label (for example, `Legion Square Parking`)
+and the label from its **type** (`Config.garageTypes[type].blipLabel`) as its
+named category. That groups all Garage, Job Garage, Gang Garage, and Impound Lot
+locations under their respective pause-map legend headings without repeated,
+indistinguishable `Garage` entries — see `qblib/modules/blips/docs.md`.
 
 `public` and `private` deliberately share the label `Garage`: to a player, both
 are just a garage. The specific name still appears in whichever interaction

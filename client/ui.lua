@@ -39,6 +39,7 @@ local function appDefinition()
     return {
         id = 'qbgarages:garage', title = garage and garage.label or 'Garage',
         description = garage and garage.typeLabel or 'Vehicle garage', icon = garage and garage.isImpound and 'lock' or 'warehouse',
+        accent = type(Config.ui.accent) == 'string' and Config.ui.accent or nil,
         width = 920, height = 720,
         navigation = {
             { id = 'vehicles', label = 'Vehicles', icon = 'car-front', badge = #S.vehicles,
@@ -78,11 +79,6 @@ function Garages.ui.render()
     if Garages.state.isOpen() then QB.nui.registerApp(appDefinition()) end
 end
 
-function Garages.ui.pushTheme()
-    local accent = Config.ui.accent
-    QBTheme.apply(type(accent) == 'string' and accent or nil)
-end
-
 ---@param garageId string
 function Garages.ui.open(garageId)
     CreateThread(function()
@@ -95,7 +91,6 @@ function Garages.ui.open(garageId)
         end
         Garages.state.adopt(payload)
         Garages.state.setOpen(true)
-        Garages.ui.pushTheme()
         QB.nui.registerApp(appDefinition())
         QB.nui.openApp('qbgarages:garage')
         Garages.state.setOpen(false)
