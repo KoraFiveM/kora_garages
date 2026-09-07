@@ -21,18 +21,23 @@ local function appDefinition()
     local items = {}
     for _, vehicle in ipairs(S.vehicles) do
         local action = garage and vehicleAction(vehicle, garage)
-        local condition = ('Fuel %d%% · Engine %d%% · Body %d%%'):format(
-            math.floor(tonumber(vehicle.fuel) or 0), math.floor(tonumber(vehicle.engine) or 0), math.floor(tonumber(vehicle.body) or 0)
-        )
         local state = vehicle.state == 'impounded' and 'Impounded' or vehicle.state == 'out' and 'Out on the street' or 'In the garage'
         if not vehicle.accepted then state = state .. (' · This garage does not accept %s'):format(vehicle.category or 'this vehicle') end
         items[#items + 1] = {
             id = vehicle.plate, label = vehicle.label,
-            description = ('%s · %s\n%s'):format(vehicle.plate, state, condition),
+            description = ('%s · %s'):format(vehicle.plate, state),
             icon = vehicle.state == 'impounded' and 'lock' or 'car-front',
             badge = action and actionLabel(action, vehicle) or nil,
             tone = vehicle.state == 'impounded' and 'warning' or vehicle.state == 'out' and 'neutral' or 'primary',
             action = action and ('garage:' .. action) or nil,
+            metadata = {
+                { label = 'Fuel', value = ('%d%%'):format(math.floor(tonumber(vehicle.fuel) or 0)),
+                    tone = tonumber(vehicle.fuel) and tonumber(vehicle.fuel) < 20 and 'warning' or 'neutral' },
+                { label = 'Engine', value = ('%d%%'):format(math.floor(tonumber(vehicle.engine) or 0)),
+                    tone = tonumber(vehicle.engine) and tonumber(vehicle.engine) < 40 and 'destructive' or 'neutral' },
+                { label = 'Body', value = ('%d%%'):format(math.floor(tonumber(vehicle.body) or 0)) },
+                { label = 'Category', value = vehicle.category or 'vehicle' },
+            },
         }
     end
 
@@ -50,7 +55,8 @@ local function appDefinition()
                             { label = 'Vehicles', value = #S.vehicles, icon = 'car-front' },
                             { label = 'Garage type', value = garage and garage.typeLabel or '—', icon = 'warehouse' },
                         } },
-                        { type = 'list', title = 'Your vehicles', items = items,
+                        { type = 'list', id = 'garage-vehicles', title = 'Your vehicles', layout = 'cards',
+                            searchable = true, searchPlaceholder = 'Search name, plate, state, or category…', pageSize = 9, items = items,
                             empty = garage and (garage.isImpound and 'Nothing of yours is being held here.' or 'You have no vehicles at this garage.') or 'No garage is open.' },
                     },
                 },
