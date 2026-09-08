@@ -25,6 +25,14 @@ local function createBlips()
                 shortRange = true,
                 label = garage.label,
                 category = policy.blipLabel,
+                info = {
+                    title = garage.label,
+                    rows = {
+                        { kind = 'name', label = 'Service', value = policy.label },
+                        { kind = 'wrappedText', value = policy.shows == 'impounded'
+                            and 'Retrieve vehicles held by impound.' or 'Access and store eligible vehicles here.' },
+                    },
+                },
             })
             if blip then created[#created + 1] = blip end
         end
