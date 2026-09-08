@@ -57,7 +57,7 @@ ownership proof of its own, so honouring it would be a free un-impound.
 
 Every blip uses its garage location label and
 `Config.garageTypes[type].blipLabel` as its named category. This groups matching
-Garage, Job Garage, Gang Garage, and Impound Lot locations beneath separate
+Garage, Job Garage, Gang Garage, and Impound locations beneath separate
 pause-map legend headings without identical entries. See qblib's blip docs.
 
 ## Tests

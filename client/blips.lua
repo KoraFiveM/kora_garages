@@ -23,8 +23,8 @@ local function createBlips()
                 color = policy.blipColor,
                 scale = 0.8,
                 shortRange = true,
-                label = garage.label,
                 category = policy.blipLabel,
+                name = garage.label,
                 info = {
                     title = garage.label,
                     rows = {

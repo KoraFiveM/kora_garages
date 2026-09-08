@@ -75,7 +75,7 @@ Config.garageTypes = {
     },
     impound = {
         label = 'Impound Lot',
-        blipLabel = 'Impound Lot',
+        blipLabel = 'Impound',
         blipSprite = 67,
         blipColor = 5,
         -- The inverse listing: an impound lot shows ONLY impounded vehicles,

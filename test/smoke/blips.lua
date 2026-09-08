@@ -47,7 +47,7 @@ h.test('garage markers use their location labels and shared type categories', fu
 
     local names, publicCategories = {}, {}
     for _, options in ipairs(created) do
-        names[options.label] = true
+        names[options.name] = true
         if options.category == Config.garageTypes.public.blipLabel then
             publicCategories[options.category] = true
         end
@@ -57,6 +57,7 @@ h.test('garage markers use their location labels and shared type categories', fu
     h.assertTrue(names['Pink Cage Motel Parking'], 'Pink Cage has a distinct map label')
     h.assertEqual(count(names), garageCount, 'no two configured markers have an indistinguishable map label')
     h.assertEqual(count(publicCategories), 1, 'public garages share one legend category')
+    h.assertEqual(created[1].label, nil, 'qblib composes map labels from category and location name')
 end)
 
 h.test('rebuilding markers removes the previous set before adding another', function()
