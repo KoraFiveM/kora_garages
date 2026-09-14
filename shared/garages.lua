@@ -21,9 +21,13 @@ local S = Garages.shared
 ---@return string|nil plate, string|nil error
 function S.normalisePlate(value)
     if type(value) ~= 'string' then return nil, 'plate must be a string' end
-    local plate = value:gsub('%s+', ''):upper()
-    if #plate == 0 then return nil, 'plate must not be empty' end
-    if #plate > 8 then return nil, 'plate must be at most 8 characters' end
+    local plate, reason = QB.vehicle.normalizePlate(value, {
+        whitespace = 'remove',
+        characters = 'any',
+    })
+    if reason == 'empty' then return nil, 'plate must not be empty' end
+    if reason == 'too_long' then return nil, 'plate must be at most 8 characters' end
+    if not plate then return nil, 'plate must be valid' end
     return plate
 end
 

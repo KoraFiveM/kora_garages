@@ -280,6 +280,16 @@ function M.install()
             trigger = function() end,
         },
         notify = { send = function() end },
+        vehicle = {
+            normalizePlate = function(value, options)
+                if type(value) ~= 'string' then return nil, 'invalid_type' end
+                local plate = value:match('^%s*(.-)%s*$'):upper()
+                if options.whitespace == 'remove' then plate = plate:gsub('%s+', '') end
+                if plate == '' then return nil, 'empty' end
+                if #plate > 8 then return nil, 'too_long' end
+                return plate
+            end,
+        },
     }
 
     return {
