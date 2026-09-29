@@ -1,0 +1,185 @@
+CreateThread(function()
+    local rows = QB.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
+    if not rows then return end
+
+    for _, row in ipairs(rows) do
+        local ok, pos = pcall(json.decode, row.garage)
+        if ok and type(pos) == 'table' and pos.x and pos.y and pos.z then
+            local point = vector4(pos.x, pos.y, pos.z, pos.w or 0.0)
+            Config.garages['house_' .. row.name] = {
+                type = 'private',
+                label = 'Garage - ' .. row.name,
+                coords = point,
+                spawn = point,
+            }
+        end
+    end
+end)
+
+QB.callback.register('qbgarages:getGarages', function()
+    return Config.garages
+end)
+
+QB.callback.register('qbgarages:houseGarages', function(src)
+    return Config.garages
+end)
+
+local function nearGarage(src, garage)
+    local ped = GetPlayerPed(src)
+    local pos = GetEntityCoords(ped)
+    return #(pos - vector3(garage.coords.x, garage.coords.y, garage.coords.z)) <= Config.interaction.distance
+end
+
+local function canUseGarage(src, garage)
+    if garage.job then
+        local job = exports.qbcore:getJob(src)
+        return job and job.name == garage.job
+    end
+    if garage.gang then
+        local gang = exports.qbcore:getGang(src)
+        return gang and gang.name == garage.gang
+    end
+    return true
+end
+
+local function ownsVehicle(src, plate)
+    local citizenid = exports.qbcore:getPlayerData(src, { 'citizenid' })
+    local vehicle = exports.qbcore:getByPlate(plate)
+    if not vehicle then return nil, 'That vehicle does not exist' end
+    if vehicle.citizenid ~= citizenid then return nil, 'That is not your vehicle' end
+    return vehicle
+end
+
+QB.callback.register('qbgarages:list', function(src, garageId)
+    local garage = Config.garages[garageId]
+    if not garage then return false, 'Unknown garage' end
+    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
+    if not canUseGarage(src, garage) then return false, 'You cannot use this garage' end
+
+    local citizenid = exports.qbcore:getPlayerData(src, { 'citizenid' })
+    local vehicles = exports.qbcore:getByOwner(citizenid) or {}
+
+    local list = {}
+    for _, vehicle in ipairs(vehicles) do
+        local showsImpounded = garage.type == 'impound'
+        if (vehicle.state == 'impounded') == showsImpounded then
+            list[#list + 1] = {
+                plate = vehicle.plate,
+                model = vehicle.model,
+                state = vehicle.state,
+                fee = vehicle.state == 'impounded' and (tonumber(vehicle.impound_fee) or Config.impound.fee) or nil,
+            }
+        end
+    end
+    QB.print.debug('Garage list for garageId:', garageId, 'vehicles:', list)
+    return { garage = { id = garageId, label = garage.label, type = garage.type }, vehicles = list }
+end)
+
+
+local vehicleTypes = {
+    boats = 'boat',
+    helicopters = 'heli',
+    planes = 'plane',
+    motorcycles = 'bike',
+    cycles = 'bike',
+}
+
+local function vehicleType(model)
+    return vehicleTypes[Garages.shared.category(model) or ''] or 'automobile'
+end
+
+local function pickSpawn(garage)
+    local vehicles = GetAllVehicles()
+
+    for _, spawn in ipairs(garage.spawns or { garage.spawn }) do
+        local free = true
+        for _, other in ipairs(vehicles) do
+            if #(GetEntityCoords(other) - vector3(spawn.x, spawn.y, spawn.z)) < Config.spawn.clearance then
+                free = false
+                break
+            end
+        end
+        if free then return spawn end
+    end
+end
+
+QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
+    local garage = Config.garages[garageId]
+    if not garage then return false, 'Unknown garage' end
+    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
+    if not canUseGarage(src, garage) then return false, 'You cannot use this garage' end
+
+    local vehicle, err = ownsVehicle(src, plate)
+    if not vehicle then return false, err end
+
+    if vehicle.state == 'out' then return false, 'That vehicle is already out' end
+    if vehicle.state == 'impounded' and garage.type ~= 'impound' then return false, 'That vehicle is impounded' end
+
+    local spawn = pickSpawn(garage)
+    if not spawn then return false, 'There is no free spot to bring that out' end
+
+    local model = tonumber(vehicle.model) or joaat(tostring(vehicle.model):lower())
+    local entity = CreateVehicleServerSetter(model, vehicleType(vehicle.model), spawn.x, spawn.y, spawn.z, spawn.w)
+
+    local deadline = GetGameTimer() + 3000
+    while not DoesEntityExist(entity) and GetGameTimer() < deadline do Wait(10) end
+    if not DoesEntityExist(entity) then return false, 'Could not spawn that vehicle' end
+
+    SetEntityRoutingBucket(entity, GetPlayerRoutingBucket(src))
+    SetVehicleNumberPlateText(entity, plate)
+
+    if vehicle.state == 'impounded' then
+        local fee = tonumber(vehicle.impound_fee) or Config.impound.defaultFee
+        local paid = exports.qbcore:removeMoney(src, 'cash', fee, 'impound-fee')
+        if not paid then
+            DeleteEntity(entity)
+            return false, ('You need $%d to release this vehicle'):format(fee)
+        end
+    end
+
+    QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
+    exports.qbvehiclekeys:giveKeys(src, plate)
+
+    return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
+end)
+
+local function getVehicleByPlate(plate)
+    plate = plate:gsub('%s+', ''):upper()
+
+    for _, vehicle in ipairs(GetAllVehicles()) do
+        if GetVehicleNumberPlateText(vehicle):gsub('%s+', ''):upper() == plate then
+            print('Found vehicle with plate:', plate, 'entity:', vehicle)
+            return vehicle
+        end
+    end
+
+    return nil
+end
+
+QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, mods, fuel)
+    local garage = Config.garages[garageId]
+    if not garage then return false, 'Unknown garage' end
+    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
+
+    local vehicle, err = ownsVehicle(src, plate)
+    if not vehicle then return false, err end
+
+    local entity = NetworkGetEntityFromNetworkId(tonumber(netId))
+    if not entity or entity == 0 or not DoesEntityExist(entity) then
+        entity = getVehicleByPlate(plate)
+        if not entity then
+            return false, 'That vehicle is not here'
+        end
+    end
+    local snapshot = {
+        engineHealth = math.floor(GetVehicleEngineHealth(entity)),
+        bodyHealth = math.floor(GetVehicleBodyHealth(entity)),
+        fuel = math.floor(fuel),
+        mods = type(mods) == 'table' and mods or nil,
+    }
+
+    local confirmed = QB.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    DeleteEntity(entity)
+
+    return true
+end)
