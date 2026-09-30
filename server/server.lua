@@ -153,7 +153,7 @@ local function getVehicleByPlate(plate)
     return nil
 end
 
-QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, mods, fuel)
+QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, fuel, mods)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end

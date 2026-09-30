@@ -26,6 +26,24 @@ local function waitForEntity(netId)
     end
 end
 
+local toggleFields = { 'modTurbo', 'modSmokeEnabled', 'modXenon', 'modCustomTiresF', 'modCustomTiresR' }
+local flagTables = { 'extras', 'tireBurstState', 'tireBurstCompletely', 'windowStatus', 'doorStatus', 'neonEnabled' }
+
+local function asBoolean(value)
+    return value == true or value == 1 or value == '1' or value == 'true'
+end
+
+local function normalizeMods(mods)
+    for _, field in ipairs(toggleFields) do
+        if mods[field] ~= nil then mods[field] = asBoolean(mods[field]) end
+    end
+    for _, field in ipairs(flagTables) do
+        if type(mods[field]) == 'table' then
+            for key, value in pairs(mods[field]) do mods[field][key] = asBoolean(value) end
+        end
+    end
+end
+
 local function applyMods(entity, mods)
     if not Config.spawn.applyMods then return end
     if type(mods) == 'string' then
@@ -33,6 +51,7 @@ local function applyMods(entity, mods)
         mods = ok and decoded or nil
     end
     if type(mods) ~= 'table' then return end
+    normalizeMods(mods)
 
     local deadline = GetGameTimer() + 2000
     while not NetworkHasControlOfEntity(entity) and GetGameTimer() < deadline do
@@ -86,8 +105,7 @@ local function store(garageId, plate)
     end
 
     -- mods live behind client-only natives; the server treats them as untrusted
-    local ok, mods = pcall(QB.vehicle.getProperties, entity)
-    local stored, err = QB.callback.trigger('qbgarages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), ok and mods or nil, GetVehicleFuelLevel(entity))
+    local stored, err = QB.callback.trigger('qbgarages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), QB.vehicle.getProperties(entity))
     if not stored then return notify(err or 'You cannot store that here.') end
 
     notify(('%s is parked.'):format(plate), 'success')
