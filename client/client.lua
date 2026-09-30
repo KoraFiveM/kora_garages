@@ -121,7 +121,7 @@ local function openGarage(garageId)
             if badge then usable[vehicle.plate] = vehicle end
             items[#items + 1] = {
                 id = vehicle.plate,
-                label = Garages.shared.label(vehicle.model),
+                label = exports.qbcore:getShared('vehicles',vehicle.model).name,
                 description = ('%s · %s'):format(vehicle.plate, status),
                 image = 'https://docs-backend.fivem.net/vehicles/' .. vehicle.model .. '.webp',
                 icon = icon,
@@ -182,7 +182,6 @@ local function mayUse(garage)
 
     if garage.job then
         local job = exports.qbcore:getJob()
-        QB.print.debug(job)
         if type(job) ~= 'table' or job.name ~= garage.job then return false end
         if policy.requireDuty and not job.onduty then return false end
         return true
@@ -206,7 +205,7 @@ local function addZone(id, garage)
         {
             label = (impound and 'Collect from %s' or 'Open %s'):format(garage.label),
             icon = impound and 'car-front' or 'warehouse',
-            canInteract = function()print(mayUse(garage)) return mayUse(garage) end,
+            canInteract = function()return mayUse(garage) end,
             action = function() openGarage(id) end,
         },
     }, Config.debug)

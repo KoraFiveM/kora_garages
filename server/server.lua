@@ -1,3 +1,4 @@
+local allVehs = {}
 CreateThread(function()
     local rows = QB.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
     if not rows then return end
@@ -71,7 +72,6 @@ QB.callback.register('qbgarages:list', function(src, garageId)
             }
         end
     end
-    QB.print.debug('Garage list for garageId:', garageId, 'vehicles:', list)
     return { garage = { id = garageId, label = garage.label, type = garage.type }, vehicles = list }
 end)
 
@@ -85,7 +85,7 @@ local vehicleTypes = {
 }
 
 local function vehicleType(model)
-    return vehicleTypes[Garages.shared.category(model) or ''] or 'automobile'
+    return vehicleTypes[exports.qbcore:getShared('vehicles', model).category or ''] or 'automobile'
 end
 
 local function pickSpawn(garage)
@@ -139,20 +139,17 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
 
     QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
     exports.qbvehiclekeys:giveKeys(src, plate)
-
+    allVehs[plate] = entity
     return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
 end)
 
 local function getVehicleByPlate(plate)
     plate = plate:gsub('%s+', ''):upper()
-
     for _, vehicle in ipairs(GetAllVehicles()) do
         if GetVehicleNumberPlateText(vehicle):gsub('%s+', ''):upper() == plate then
-            print('Found vehicle with plate:', plate, 'entity:', vehicle)
             return vehicle
         end
     end
-
     return nil
 end
 
@@ -180,6 +177,62 @@ QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, mo
 
     local confirmed = QB.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
     DeleteEntity(entity)
-
+    allVehs[plate] = nil
     return true
 end)
+
+local function isVehicleOccupied(vehicle)
+    for _, player in ipairs(GetPlayers()) do
+        local ped = GetPlayerPed(player)
+        if GetVehiclePedIsIn(ped, false) == vehicle then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function removeVehicles(minutes)
+
+    local function removeAll()
+        for plate, entity in pairs(allVehs) do
+            if DoesEntityExist(entity) and not isVehicleOccupied(entity) then
+                DeleteEntity(entity)
+            end
+
+            allVehs[plate] = nil
+            QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'garaged', plate})
+        end
+    end
+
+    if minutes <= 0 then
+        removeAll()
+        QB.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+        return
+    end
+
+    QB.notify.send(-1, { title = 'ADMIN', message = ('All vehicles will be removed in %d minutes.'):format(minutes), type = 'info'})
+
+    CreateThread(function()
+        for time = minutes, 1, -1 do
+            Wait(60000)
+
+            if time > 1 then
+                QB.notify.send(-1, {
+                    title = 'ADMIN',
+                    message = ('All vehicles will be removed in %d minutes.'):format(time - 1),
+                    type = 'info'
+                })
+            end
+        end
+        removeAll()
+        QB.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+    end)
+end
+
+RegisterCommand('garage:storeAll', function(source, args)
+    if not IsPlayerAceAllowed(source, 'command') then return end
+    removeVehicles(tonumber(args[1]) or 1)
+end, false)
+
+QB.sql.query('UPDATE player_vehicles SET state = ? WHERE state = ?', {'garaged', 'out'})
