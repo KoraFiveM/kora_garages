@@ -57,9 +57,17 @@ Config.garages = {
         label = 'Legion Square Parking',
         coords = vector4(211.52, -802.16, 30.89, 341.39),
         spawns = {
-            vector4(222.0, -804.0, 30.6, 159.0),
-            vector4(225.0, -807.5, 30.6, 159.0),
-            vector4(226.5, -811.5, 30.6, 159.0),
+            vector4(207.56, -798.5, 29.98, 240.03),
+            vector4(208.2, -796.03, 29.96, 246.9),
+            vector4(209.11, -793.78, 29.94, 250.87),
+            vector4(210.64, -791.31, 29.91, 243.7),
+            vector4(211.37, -789.13, 29.89, 249.9),
+            vector4(212.11, -786.52, 29.88, 250.0),
+            vector4(213.17, -783.58, 29.87, 248.2),
+            vector4(213.8, -781.26, 29.87, 250.28),
+            vector4(215.06, -778.5, 29.85, 249.45),
+            vector4(216.01, -776.44, 29.83, 253.74)
+
         },
         bucket = 0,
     },
@@ -68,8 +76,17 @@ Config.garages = {
         label = 'Pink Cage Motel Parking',
         coords = vector4(273.4, -343.2, 45.1, 159.0),
         spawns = {
-            vector4(271.0, -334.8, 44.9, 159.0),
-            vector4(275.5, -338.6, 44.9, 159.0),
+            vector4(267.15, -332.51, 43.92, 249.31),
+            vector4(268.25, -329.33, 43.92, 249.77),
+            vector4(269.63, -326.09, 43.92, 250.2),
+            vector4(270.94, -322.96, 43.92, 251.83),
+            vector4(272.34, -319.82, 43.92, 252.46),
+            vector4(281.9, -323.4, 43.92, 70.64),
+            vector4(280.82, -326.54, 43.92, 70.64),
+            vector4(279.52, -329.78, 43.92, 70.64),
+            vector4(278.14, -333.03, 43.92, 70.64),
+            vector4(277.05, -336.17, 43.92, 70.64),
+            vector4(275.56, -339.7, 43.92,  70.64),
         },
         bucket = 0,
     },
@@ -117,8 +134,6 @@ Config.garages = {
     },
 }
 
--- Private lots, one per row in `houselocations` that has a garage set.
--- See server/houses.lua for the query and vector4 parsing.
 Config.houseGarages = {
     query = 'SELECT * FROM houselocations WHERE garage IS NOT NULL',
     bucket = 0,      -- routing bucket house garages sit in
@@ -138,8 +153,6 @@ Config.spawn = {
     applyMods = true,         -- reapply the stored cosmetic mods on take-out
 }
 
--- Only cosmetic fields survive into a stored vehicle's mods. Performance
--- mods (engine, brakes, turbo...) are never trusted from the client.
 Config.mods = {
     cosmetic = {
         'plateIndex', 'color1', 'color2', 'pearlescentColor', 'dashboardColor',

@@ -243,7 +243,6 @@ CreateThread(function()
     end
 end)
 
-
 local function createBlips()
     for _, blip in ipairs(blips) do QB.blips.remove(blip) end
     blips = {}
@@ -269,6 +268,6 @@ end
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', createBlips)
 AddEventHandler('qbcore:client:playerLoaded', createBlips)
 
-AddEventHandler('onClientResourceStart', function(resource)
+AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then createBlips() end
 end)
