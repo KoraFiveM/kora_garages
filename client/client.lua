@@ -121,7 +121,10 @@ local function describe(vehicle, policy)
     end
     return 'In the garage', 'Take out', 'car-front'
 end
-
+local function getModelName(model)
+    local veh = exports.qbcore:getShared('vehicles', model)
+    return veh and veh.name or 'Unknown Vehicle'
+end
 local function openGarage(garageId)
     if busy then return end
 
@@ -139,7 +142,7 @@ local function openGarage(garageId)
             if badge then usable[vehicle.plate] = vehicle end
             items[#items + 1] = {
                 id = vehicle.plate,
-                label = exports.qbcore:getShared('vehicles',vehicle.model).name,
+                label = getModelName(vehicle.model),
                 description = ('%s · %s'):format(vehicle.plate, status),
                 image = 'https://docs-backend.fivem.net/vehicles/' .. vehicle.model .. '.webp',
                 icon = icon,
@@ -155,14 +158,14 @@ local function openGarage(garageId)
             icon = impound and 'lock' or 'warehouse',
             accent = type(Config.ui.accent) == 'string' and Config.ui.accent or nil,
             layout = 'standard',
-            width = 1200, height = 800,
+            width = 1200, height = 850,
             navigation = {
                 { id = 'vehicles', label = 'Vehicles', icon = 'car-front', badge = #items,
                     content = {
                         title = garage.label,
                         description = 'Select a vehicle.',
                         blocks = {
-                            { type = 'list', id = 'garage-vehicles', title = 'Your vehicles', layout = 'cards',
+                            { type = 'list', id = 'garage-vehicles', title = 'Your vehicles', layout = 'cards', cardStyle = 'media', columns = 3,
                                 searchable = true, pageSize = 9, items = items,
                                 empty = impound and 'Nothing of yours is being held here.' or 'You have no vehicles at this garage.' },
                         },
