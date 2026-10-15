@@ -1,4 +1,5 @@
 local allVehs = {}
+PropertyGarages.entities = allVehs
 CreateThread(function()
     local rows = QB.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
     if not rows then return end
@@ -31,7 +32,8 @@ local function nearGarage(src, garage)
     return #(pos - vector3(garage.coords.x, garage.coords.y, garage.coords.z)) <= Config.interaction.distance
 end
 
-local function canUseGarage(src, garage)
+local function canUseGarage(src, garage, id, action)
+    if garage.property then return PropertyGarages.authorize(src, id, action) end
     if garage.job then
         local job = exports.qbcore:getJob(src)
         return job and job.name == garage.job
@@ -55,7 +57,7 @@ QB.callback.register('qbgarages:list', function(src, garageId)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
-    if not canUseGarage(src, garage) then return false, 'You cannot use this garage' end
+    if not canUseGarage(src, garage, garageId, 'list') then return false, 'You cannot use this garage' end
 
     local citizenid = exports.qbcore:getPlayerData(src, { 'citizenid' })
     local vehicles = exports.qbcore:getByOwner(citizenid) or {}
@@ -63,7 +65,8 @@ QB.callback.register('qbgarages:list', function(src, garageId)
     local list = {}
     for _, vehicle in ipairs(vehicles) do
         local showsImpounded = garage.type == 'impound'
-        if (vehicle.state == 'impounded') == showsImpounded then
+        local atGarage = garage.property and vehicle.garage_id == garageId or not garage.property and not PropertyGarages.reserved(vehicle)
+        if atGarage and (vehicle.state == 'impounded') == showsImpounded then
             list[#list + 1] = {
                 plate = vehicle.plate,
                 model = vehicle.model,
@@ -107,7 +110,7 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
-    if not canUseGarage(src, garage) then return false, 'You cannot use this garage' end
+    if not canUseGarage(src, garage, garageId, 'retrieve') then return false, 'You cannot use this garage' end
 
     local vehicle, err = ownsVehicle(src, plate)
     if not vehicle then return false, err end
@@ -117,6 +120,8 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
 
     local spawn = pickSpawn(garage)
     if not spawn then return false, 'There is no free spot to bring that out' end
+    if garage.property then return PropertyGarages.takeOut(src, garageId, vehicle, spawn) end
+    if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
 
     local model = tonumber(vehicle.model) or joaat(tostring(vehicle.model):lower())
     local entity = CreateVehicleServerSetter(model, vehicleType(vehicle.model), spawn.x, spawn.y, spawn.z, spawn.w)
@@ -160,6 +165,12 @@ QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, fu
 
     local vehicle, err = ownsVehicle(src, plate)
     if not vehicle then return false, err end
+
+    if garage.property then return PropertyGarages.store(src, garageId, vehicle, netId, fuel, mods) end
+    if PropertyGarages.reserved(vehicle) and vehicle.state == 'out' and garage.type == 'public' and canUseGarage(src, garage, garageId, 'store') then
+        return PropertyGarages.store(src, garageId, vehicle, netId, fuel, mods, true)
+    end
+    if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
 
     local entity = NetworkGetEntityFromNetworkId(tonumber(netId))
     if not entity or entity == 0 or not DoesEntityExist(entity) then

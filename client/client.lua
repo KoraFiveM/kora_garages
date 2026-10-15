@@ -218,6 +218,7 @@ local function mayUse(garage)
 end
 
 local function addZone(id, garage)
+    if garage.disabled then return end
     local policy = Config.garageTypes[garage.type]
     if not policy then return end
     local impound = policy.shows == 'impounded'
@@ -231,6 +232,12 @@ local function addZone(id, garage)
         },
     }, Config.debug)
 end
+
+exports('openGarage', function(id)
+    if not Config.garages[id] or Config.garages[id].disabled then return false, 'Garage is unavailable.' end
+    openGarage(id)
+    return true
+end)
 
 for id, garage in pairs(Config.garages) do addZone(id, garage) end
 
@@ -273,4 +280,17 @@ AddEventHandler('qbcore:client:playerLoaded', createBlips)
 
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then createBlips() end
+end)
+
+RegisterNetEvent('qbgarages:propertyRegistered', function(id, garage)
+    if type(id) ~= 'string' or type(garage) ~= 'table' or garage.property ~= true then return end
+    QB.interact.removeZone(('qbgarages:%s'):format(id))
+    Config.garages[id] = garage
+    addZone(id, garage)
+end)
+
+RegisterNetEvent('qbgarages:propertyRemoved', function(id)
+    if type(id) ~= 'string' or not Config.garages[id] or not Config.garages[id].property then return end
+    QB.interact.removeZone(('qbgarages:%s'):format(id))
+    Config.garages[id].disabled = true
 end)
