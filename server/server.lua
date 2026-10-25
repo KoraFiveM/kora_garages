@@ -1,6 +1,10 @@
 local allVehs = {}
 PropertyGarages.entities = allVehs
 CreateThread(function()
+    -- Legacy housing is optional; qbhousing stores its properties in a different table.
+    local exists = QB.sql.scalar('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { 'houselocations' })
+    if not exists or exists == 0 then return end
+
     local rows = QB.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
     if not rows then return end
 

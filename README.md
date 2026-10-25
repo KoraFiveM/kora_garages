@@ -37,6 +37,6 @@ after property access ends. That checked transition moves its durable garage
 association to the public garage; a still-parked protected vehicle cannot use
 this recovery path.
 
-Run `lua test/property.lua` from this resource to validate the property adapter.
-These tests use
+Run `lua test/property.lua` and `lua test/legacy-housing.lua` from this resource
+to validate the property adapter and legacy caller compatibility. These use
 native/SQL fixtures; live multiplayer acceptance requires FXServer.
