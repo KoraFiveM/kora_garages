@@ -1,5 +1,5 @@
-local H = dofile('../qbcore/test/harness.lua')
-local jsonTools = dofile('../qbcore/test/mocks.lua')
+local H = dofile('../kora_core/test/harness.lua')
+local jsonTools = dofile('../kora_core/test/mocks.lua')
 local json = { encode = jsonTools.stableEncode, decode = jsonTools.simpleDecode }
 local function copy(value) return json.decode(json.encode(value)) end
 
@@ -17,7 +17,7 @@ local function setup(stored)
     env.Core, env.PropertyGarages, env.json = { garage = {} }, nil, json
     env.Config = { garages = { public = { coords = vector(0, 0, 0), spawn = vector(0, 0, 0, 0), type = 'public', label = 'Public' } },
         interaction = { distance = 4, storeDistance = 12 }, spawn = { clearance = 2 }, garage = { spawnNetworkIdTimeout = 1000 } }
-    env.GetCurrentResourceName = function() return 'qbgarages' end
+    env.GetCurrentResourceName = function() return 'kora_garages' end
     env.GetInvokingResource = function() return f.caller end
     env.vector3, env.vector4 = vector, vector
     env.GetPlayerPed = function(src) return tonumber(src) end
@@ -74,15 +74,15 @@ local function setup(stored)
         end
         return 1
     end
-    assert(loadfile('../qbcore/modules/garage/server.lua', 't', env))()
-    env.exports = setmetatable({ qbcore = {
+    assert(loadfile('../kora_core/modules/garage/server.lua', 't', env))()
+    env.exports = setmetatable({ kora_core = {
         getPlayerData = function(_, _, path) return path and 'CID1' or { citizenid = 'CID1' } end,
         getByPlate = function() return copy(f.vehicle) end,
         getByOwner = function() return { copy(f.vehicle) } end,
         getShared = function() return {} end,
         storeVehicle = function(_, ...) return env.Core.garage.storeVehicle(...) end,
         spawnVehicle = function(_, ...) return env.Core.garage.spawnVehicle(...) end,
-    }, qbvehiclekeys = { giveKeys = function() end } }, { __call = function(_, name, fn) f.provided[name] = fn end })
+    }, kora_vehiclekeys = { giveKeys = function() end } }, { __call = function(_, name, fn) f.provided[name] = fn end })
     assert(loadfile('server/property.lua', 't', env))()
     assert(loadfile('server/server.lua', 't', env))()
     f.threads[1]()

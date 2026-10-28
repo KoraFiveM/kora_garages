@@ -1,11 +1,11 @@
-# qbgarages
+# kora_garages
 
 Existing configured garages retain their client/server callbacks and behavior.
 
 Property providers may register runtime garages on the server:
 
 ```lua
-local ok, err = exports.qbgarages:RegisterPropertyGarage('property-garage-id', {
+local ok, err = exports.kora_garages:RegisterPropertyGarage('property-garage-id', {
     label = 'Home', coords = { x = 0, y = 0, z = 0 },
     spawn = { x = 5, y = 0, z = 0, w = 90 }, slots = 2,
 }, function(source, action, id)
@@ -24,13 +24,13 @@ stop/unregister immediately disables access. `UnregisterPropertyGarage(id)`
 preserves mapping and vehicles. Listen for `qbgarages:ready` to rebind after
 garage schema initialization/restart.
 
-Clients use `exports.qbgarages:openGarage(id)` to open the existing garage UI.
+Clients use `exports.kora_garages:openGarage(id)` to open the existing garage UI.
 It returns `true` when opening is scheduled or `false, error` for an unavailable
 garage. Server policies still check each list, store, and retrieve operation.
 Vehicles parked at protected property garages cannot be listed or retrieved
 through a public garage. Property storage validates entity, plate, routing
 bucket, proximity, capacity, and ownership, confirms an atomic state/garage
-update, and then deletes the vehicle. Retrieval uses qbcore's per-plate spawn
+update, and then deletes the vehicle. Retrieval uses kora_core's per-plate spawn
 serialization and checked state transition.
 After retrieving a vehicle, its owner may store it at a public garage even
 after property access ends. That checked transition moves its durable garage

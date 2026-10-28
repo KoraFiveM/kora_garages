@@ -1,7 +1,7 @@
 local allVehs = {}
 PropertyGarages.entities = allVehs
 CreateThread(function()
-    -- Legacy housing is optional; qbhousing stores its properties in a different table.
+    -- Legacy housing is optional; kora_housing stores its properties in a different table.
     local exists = QB.sql.scalar('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { 'houselocations' })
     if not exists or exists == 0 then return end
 
@@ -39,19 +39,19 @@ end
 local function canUseGarage(src, garage, id, action)
     if garage.property then return PropertyGarages.authorize(src, id, action) end
     if garage.job then
-        local job = exports.qbcore:getJob(src)
+        local job = exports.kora_core:getJob(src)
         return job and job.name == garage.job
     end
     if garage.gang then
-        local gang = exports.qbcore:getGang(src)
+        local gang = exports.kora_core:getGang(src)
         return gang and gang.name == garage.gang
     end
     return true
 end
 
 local function ownsVehicle(src, plate)
-    local citizenid = exports.qbcore:getPlayerData(src, { 'citizenid' })
-    local vehicle = exports.qbcore:getByPlate(plate)
+    local citizenid = exports.kora_core:getPlayerData(src, { 'citizenid' })
+    local vehicle = exports.kora_core:getByPlate(plate)
     if not vehicle then return nil, 'That vehicle does not exist' end
     if vehicle.citizenid ~= citizenid then return nil, 'That is not your vehicle' end
     return vehicle
@@ -63,8 +63,8 @@ QB.callback.register('qbgarages:list', function(src, garageId)
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
     if not canUseGarage(src, garage, garageId, 'list') then return false, 'You cannot use this garage' end
 
-    local citizenid = exports.qbcore:getPlayerData(src, { 'citizenid' })
-    local vehicles = exports.qbcore:getByOwner(citizenid) or {}
+    local citizenid = exports.kora_core:getPlayerData(src, { 'citizenid' })
+    local vehicles = exports.kora_core:getByOwner(citizenid) or {}
 
     local list = {}
     for _, vehicle in ipairs(vehicles) do
@@ -92,7 +92,7 @@ local vehicleTypes = {
 }
 
 local function vehicleType(model)
-    return vehicleTypes[exports.qbcore:getShared('vehicles', model).category or ''] or 'automobile'
+    return vehicleTypes[exports.kora_core:getShared('vehicles', model).category or ''] or 'automobile'
 end
 
 local function pickSpawn(garage)
@@ -139,7 +139,7 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
 
     if vehicle.state == 'impounded' then
         local fee = tonumber(vehicle.impound_fee) or Config.impound.defaultFee
-        local paid = exports.qbcore:removeMoney(src, 'cash', fee, 'impound-fee')
+        local paid = exports.kora_core:removeMoney(src, 'cash', fee, 'impound-fee')
         if not paid then
             DeleteEntity(entity)
             return false, ('You need $%d to release this vehicle'):format(fee)
@@ -147,7 +147,7 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     end
 
     QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
-    exports.qbvehiclekeys:giveKeys(src, plate)
+    exports.kora_vehiclekeys:giveKeys(src, plate)
     allVehs[plate] = entity
     return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
 end)

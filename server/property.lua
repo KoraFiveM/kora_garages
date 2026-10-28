@@ -87,7 +87,7 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
             allowed, err = Property.authorize(src, id, 'store')
             if not allowed then return false, err end
         end
-        local saved, saveErr = exports.qbcore:storeVehicle(vehicle.plate, {
+        local saved, saveErr = exports.kora_core:storeVehicle(vehicle.plate, {
             garageId = id, fuel = math.floor(fuel), mods = mods,
             ownerCitizenId = vehicle.citizenid,
             engineHealth = math.floor(GetVehicleEngineHealth(entity)), bodyHealth = math.floor(GetVehicleBodyHealth(entity)),
@@ -104,11 +104,11 @@ function Property.takeOut(src, id, vehicle, spawn)
         local allowed, err = Property.authorize(src, id, 'retrieve')
         if not allowed then return false, err end
         if vehicle.garage_id ~= id then return false, 'Vehicle is stored at another garage.' end
-        local networkId, spawnErr = exports.qbcore:spawnVehicle(src, vehicle.plate, spawn, spawn.w or 0.0, vehicle.citizenid)
+        local networkId, spawnErr = exports.kora_core:spawnVehicle(src, vehicle.plate, spawn, spawn.w or 0.0, vehicle.citizenid)
         if not networkId then return false, spawnErr end
         local entity = NetworkGetEntityFromNetworkId(networkId)
         Property.entities[vehicle.plate] = entity
-        exports.qbvehiclekeys:giveKeys(src, vehicle.plate)
+        exports.kora_vehiclekeys:giveKeys(src, vehicle.plate)
         return { netId = networkId, mods = vehicle.mods }
     end)
 end

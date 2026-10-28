@@ -122,7 +122,7 @@ local function describe(vehicle, policy)
     return 'In the garage', 'Take out', 'car-front'
 end
 local function getModelName(model)
-    local veh = exports.qbcore:getShared('vehicles', model)
+    local veh = exports.kora_core:getShared('vehicles', model)
     return veh and veh.name or 'Unknown Vehicle'
 end
 local function openGarage(garageId)
@@ -202,14 +202,14 @@ local function mayUse(garage)
     if not policy then return false end
 
     if garage.job then
-        local job = exports.qbcore:getJob()
+        local job = exports.kora_core:getJob()
         if type(job) ~= 'table' or job.name ~= garage.job then return false end
         if policy.requireDuty and not job.onduty then return false end
         return true
     end
 
     if garage.gang then
-        local gang = exports.qbcore:getGang()
+        local gang = exports.kora_core:getGang()
         if type(gang) ~= 'table' or gang.name ~= garage.gang then return false end
         return true
     end

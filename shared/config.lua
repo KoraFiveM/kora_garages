@@ -1,6 +1,6 @@
 Config = {}
 
-Config.debug = false -- draws qbtarget zone outlines and enables /garagedebug
+Config.debug = false -- draws kora_target zone outlines and enables /garagedebug
 
 Config.interaction = {
     mode = 'target',       -- 'target' or 'interact'
@@ -174,11 +174,11 @@ Config.mods = {
 
 Config.listing = {
     max = 50,             -- vehicles shown per garage panel
-    healthScale = 1000.0, -- qbcore stores engine/body health on a 0-1000 scale
+    healthScale = 1000.0, -- kora_core stores engine/body health on a 0-1000 scale
 }
 
 Config.ui = {
-    accent = false, -- '#RRGGBB' to override qbtheme's colour, or false to follow it
+    accent = false, -- '#RRGGBB' to override kora_theme's colour, or false to follow it
 }
 
 if QB and QB.config and QB.config.adopt then Config = QB.config.adopt(Config) end
