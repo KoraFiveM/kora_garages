@@ -37,6 +37,18 @@ after property access ends. That checked transition moves its durable garage
 association to the public garage; a still-parked protected vehicle cannot use
 this recovery path.
 
+## Vehicle id state bag
+
+When a garage take-out spawns an owned vehicle, the server sets the
+`vehicleid` state bag (`player_vehicles.id`, integer) on the entity, so stock
+ox_inventory can skip its per-open plate lookup. The bag is server-only
+(non-replicated), set only after the entity exists and the `out` state update
+succeeded. It is done by `exports.kora_core:tagVehicle`, which also tags the
+property-garage path (`spawnVehicle`). With an older kora_core lacking that
+export the call is skipped and take-out works unchanged. Set convar
+`kora:vehicleIdStateBag 0` to disable (default `1`).
+
 Run `lua test/property.lua` and `lua test/legacy-housing.lua` from this resource
-to validate the property adapter and legacy caller compatibility. These use
+to validate the property adapter, vehicle id tagging and legacy caller compatibility
+(run from a sibling layout with `../kora_core` and `../kora_lib` present). These use
 native/SQL fixtures; live multiplayer acceptance requires FXServer.
