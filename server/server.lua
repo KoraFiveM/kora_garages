@@ -2,10 +2,10 @@ local allVehs = {}
 PropertyGarages.entities = allVehs
 CreateThread(function()
     -- Legacy housing is optional; kora_housing stores its properties in a different table.
-    local exists = QB.sql.scalar('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { 'houselocations' })
+    local exists = Kora.sql.scalar('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { 'houselocations' })
     if not exists or exists == 0 then return end
 
-    local rows = QB.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
+    local rows = Kora.sql.query('SELECT * FROM houselocations WHERE garage IS NOT NULL')
     if not rows then return end
 
     for _, row in ipairs(rows) do
@@ -22,11 +22,11 @@ CreateThread(function()
     end
 end)
 
-QB.callback.register('qbgarages:getGarages', function()
+Kora.callback.register('qbgarages:getGarages', function()
     return Config.garages
 end)
 
-QB.callback.register('qbgarages:houseGarages', function(src)
+Kora.callback.register('qbgarages:houseGarages', function(src)
     return Config.garages
 end)
 
@@ -57,7 +57,7 @@ local function ownsVehicle(src, plate)
     return vehicle
 end
 
-QB.callback.register('qbgarages:list', function(src, garageId)
+Kora.callback.register('qbgarages:list', function(src, garageId)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
@@ -110,7 +110,7 @@ local function pickSpawn(garage)
     end
 end
 
-QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
+Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
@@ -146,7 +146,7 @@ QB.callback.register('qbgarages:takeOut', function(src, garageId, plate)
         end
     end
 
-    QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
+    Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
     exports.kora_vehiclekeys:giveKeys(src, plate)
     allVehs[plate] = entity
     return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
@@ -162,7 +162,7 @@ local function getVehicleByPlate(plate)
     return nil
 end
 
-QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, fuel, mods)
+Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, fuel, mods)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
@@ -190,7 +190,7 @@ QB.callback.register('qbgarages:store', function(src, garageId, plate, netId, fu
         mods = type(mods) == 'table' and mods or nil,
     }
 
-    local confirmed = QB.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    local confirmed = Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
     DeleteEntity(entity)
     allVehs[plate] = nil
     return true
@@ -216,24 +216,24 @@ local function removeVehicles(minutes)
             end
 
             allVehs[plate] = nil
-            QB.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'garaged', plate})
+            Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'garaged', plate})
         end
     end
 
     if minutes <= 0 then
         removeAll()
-        QB.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+        Kora.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
         return
     end
 
-    QB.notify.send(-1, { title = 'ADMIN', message = ('All vehicles will be removed in %d minutes.'):format(minutes), type = 'info'})
+    Kora.notify.send(-1, { title = 'ADMIN', message = ('All vehicles will be removed in %d minutes.'):format(minutes), type = 'info'})
 
     CreateThread(function()
         for time = minutes, 1, -1 do
             Wait(60000)
 
             if time > 1 then
-                QB.notify.send(-1, {
+                Kora.notify.send(-1, {
                     title = 'ADMIN',
                     message = ('All vehicles will be removed in %d minutes.'):format(time - 1),
                     type = 'info'
@@ -241,7 +241,7 @@ local function removeVehicles(minutes)
             end
         end
         removeAll()
-        QB.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+        Kora.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
     end)
 end
 
@@ -250,4 +250,4 @@ RegisterCommand('garage:storeAll', function(source, args)
     removeVehicles(tonumber(args[1]) or 1)
 end, false)
 
-QB.sql.query('UPDATE player_vehicles SET state = ? WHERE state = ?', {'garaged', 'out'})
+Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE state = ?', {'garaged', 'out'})

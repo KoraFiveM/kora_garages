@@ -69,15 +69,15 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
         local plate = GetVehicleNumberPlateText(entity):gsub('^%s+', ''):gsub('%s+$', ''):upper()
         if plate ~= vehicle.plate:upper() then return false, 'Vehicle plate does not match.' end
         if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, 'Vehicle is in another routing bucket.' end
-        if not QB.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
-        if not QB.distance.player(src, garage.coords, Config.interaction.distance) then return false, 'Too far from garage.' end
+        if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
+        if not Kora.distance.player(src, garage.coords, Config.interaction.distance) then return false, 'Too far from garage.' end
         for _, player in ipairs(GetPlayers()) do
             if tonumber(player) ~= src and GetVehiclePedIsIn(GetPlayerPed(player), false) == entity then return false, 'Vehicle is occupied.' end
         end
         if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
         if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
         if not recovered then
-            local rows, queryErr = QB.sql.query('SELECT `citizenid` FROM `player_vehicles` WHERE `garage_id`=? AND `state`=\'garaged\' AND `deleted_at` IS NULL', { id })
+            local rows, queryErr = Kora.sql.query('SELECT `citizenid` FROM `player_vehicles` WHERE `garage_id`=? AND `state`=\'garaged\' AND `deleted_at` IS NULL', { id })
             if not rows or queryErr then return false, queryErr or 'Garage storage is unavailable.' end
             local count, owners = 0, garage.capacityOwnerIds
             local ownerSet
@@ -115,7 +115,7 @@ end
 
 exports('RegisterPropertyGarage', function(id, raw, callback)
     if not Property.ready then return false, 'Property garage persistence is unavailable.' end
-    if not QB.compat.isCallable(callback) then return false, 'Garage policy must be callable.' end
+    if not Kora.compat.isCallable(callback) then return false, 'Garage policy must be callable.' end
     local owner = GetInvokingResource() or GetCurrentResourceName()
     if Property.known[id] and Property.known[id] ~= owner then return false, 'Garage belongs to another resource.' end
     if Config.garages[id] and not Property.known[id] then return false, 'Garage id already exists.' end
@@ -124,10 +124,10 @@ exports('RegisterPropertyGarage', function(id, raw, callback)
     return withWrite(id, 'registration:' .. id, function()
         local saved, saveErr
         if Property.known[id] then
-            saved, saveErr = QB.sql.update('UPDATE `qbgarages_property_garages` SET `definition`=? WHERE `id`=? AND `provider`=?', { json.encode(garage), id, owner })
+            saved, saveErr = Kora.sql.update('UPDATE `qbgarages_property_garages` SET `definition`=? WHERE `id`=? AND `provider`=?', { json.encode(garage), id, owner })
             if saved ~= 1 then return false, saveErr or 'Garage registration changed.' end
         else
-            saved, saveErr = QB.sql.execute('INSERT INTO `qbgarages_property_garages` (`id`,`provider`,`definition`) VALUES (?,?,?)', { id, owner, json.encode(garage) })
+            saved, saveErr = Kora.sql.execute('INSERT INTO `qbgarages_property_garages` (`id`,`provider`,`definition`) VALUES (?,?,?)', { id, owner, json.encode(garage) })
             if not saved then return false, saveErr end
         end
         Property.known[id], Property.records[id], Config.garages[id] = owner, { callback = callback, owner = owner }, garage
@@ -155,10 +155,10 @@ AddEventHandler('onResourceStop', function(name)
 end)
 
 CreateThread(function()
-    if not QB.sql.ready(60000) then return end
-    local migrated, migrationErr = QB.sql.migrateFiles(GetCurrentResourceName(), { { version = 1, name = 'property_garages', file = 'sql/001_property_garages.sql' } })
+    if not Kora.sql.ready(60000) then return end
+    local migrated, migrationErr = Kora.sql.migrateFiles(GetCurrentResourceName(), { { version = 1, name = 'property_garages', file = 'sql/001_property_garages.sql' } })
     if not migrated or migrationErr then return end
-    local rows, err = QB.sql.query('SELECT `id`,`provider`,`definition` FROM `qbgarages_property_garages`')
+    local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `qbgarages_property_garages`')
     if not rows or err then return end
     for _, row in ipairs(rows) do
         local ok, raw = pcall(json.decode, row.definition)

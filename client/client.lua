@@ -2,7 +2,7 @@ local busy = false
 local blips = {}
 
 local function notify(message, kind)
-    QB.notify.send({ title = 'Garage', message = message, type = kind or 'error' })
+    Kora.notify.send({ title = 'Garage', message = message, type = kind or 'error' })
 end
 
 local function toVec3(coords)
@@ -59,7 +59,7 @@ local function applyMods(entity, mods)
         Wait(50)
     end
 
-    QB.vehicle.setProperties(entity, mods)
+    Kora.vehicle.setProperties(entity, mods)
 end
 
 local function findVehicle(plate)
@@ -81,7 +81,7 @@ local function findVehicle(plate)
 end
 
 local function takeOut(garageId, plate)
-    local result, err = QB.callback.trigger('qbgarages:takeOut', garageId, plate)
+    local result, err = Kora.callback.trigger('qbgarages:takeOut', garageId, plate)
     if not result then return notify(err or 'You cannot take that out.') end
 
     local entity = waitForEntity(result.netId)
@@ -105,7 +105,7 @@ local function store(garageId, plate)
     end
 
     -- mods live behind client-only natives; the server treats them as untrusted
-    local stored, err = QB.callback.trigger('qbgarages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), QB.vehicle.getProperties(entity))
+    local stored, err = Kora.callback.trigger('qbgarages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
     if not stored then return notify(err or 'You cannot store that here.') end
 
     notify(('%s is parked.'):format(plate), 'success')
@@ -129,7 +129,7 @@ local function openGarage(garageId)
     if busy then return end
 
     CreateThread(function()
-        local payload, err = QB.callback.trigger('qbgarages:list', garageId)
+        local payload, err = Kora.callback.trigger('qbgarages:list', garageId)
         if not payload then return notify(err or 'You cannot use this garage.') end
 
         local garage = payload.garage
@@ -151,7 +151,7 @@ local function openGarage(garageId)
             }
         end
 
-        QB.nui.registerApp({
+        Kora.nui.registerApp({
             id = 'qbgarages:garage',
             title = garage.label,
             description = policy.label or 'Garage',
@@ -177,7 +177,7 @@ local function openGarage(garageId)
                 local vehicle = type(plate) == 'string' and usable[plate] or nil
                 if actionId ~= 'garage:use' or not vehicle or busy then return {} end
                 busy = true
-                QB.nui.closeApp('qbgarages:garage')
+                Kora.nui.closeApp('qbgarages:garage')
 
                 CreateThread(function()
                     local ok, failure = pcall(function()
@@ -192,7 +192,7 @@ local function openGarage(garageId)
                 return {}
             end,
         })
-        QB.nui.openApp('qbgarages:garage')
+        Kora.nui.openApp('qbgarages:garage')
     end)
 end
 
@@ -223,7 +223,7 @@ local function addZone(id, garage)
     if not policy then return end
     local impound = policy.shows == 'impounded'
 
-    QB.interact.addBoxZone(('qbgarages:%s'):format(id), toVec3(garage.coords), toVec3(garage.size or Config.interaction.zoneSize), {
+    Kora.interact.addBoxZone(('qbgarages:%s'):format(id), toVec3(garage.coords), toVec3(garage.size or Config.interaction.zoneSize), {
         {
             label = (impound and 'Collect from %s' or 'Open %s'):format(garage.label),
             icon = impound and 'car-front' or 'warehouse',
@@ -242,7 +242,7 @@ end)
 for id, garage in pairs(Config.garages) do addZone(id, garage) end
 
 CreateThread(function()
-    local extra = QB.callback.trigger('qbgarages:houseGarages')
+    local extra = Kora.callback.trigger('qbgarages:houseGarages')
     if type(extra) ~= 'table' then return end
 
     for id, garage in pairs(extra) do
@@ -254,7 +254,7 @@ CreateThread(function()
 end)
 
 local function createBlips()
-    for _, blip in ipairs(blips) do QB.blips.remove(blip) end
+    for _, blip in ipairs(blips) do Kora.blips.remove(blip) end
     blips = {}
 
     for id, garage in pairs(Config.garages) do
@@ -262,7 +262,7 @@ local function createBlips()
         local isHouse = tostring(id):find('^house_') ~= nil
 
         if policy and not garage.noBlip and (Config.houseGarages.blip or not isHouse) then
-            local blip = QB.blips.create(garage.coords, {
+            local blip = Kora.blips.create(garage.coords, {
                 sprite = policy.blipSprite,
                 color = policy.blipColor,
                 scale = 0.8,
@@ -284,13 +284,13 @@ end)
 
 RegisterNetEvent('qbgarages:propertyRegistered', function(id, garage)
     if type(id) ~= 'string' or type(garage) ~= 'table' or garage.property ~= true then return end
-    QB.interact.removeZone(('qbgarages:%s'):format(id))
+    Kora.interact.removeZone(('qbgarages:%s'):format(id))
     Config.garages[id] = garage
     addZone(id, garage)
 end)
 
 RegisterNetEvent('qbgarages:propertyRemoved', function(id)
     if type(id) ~= 'string' or not Config.garages[id] or not Config.garages[id].property then return end
-    QB.interact.removeZone(('qbgarages:%s'):format(id))
+    Kora.interact.removeZone(('qbgarages:%s'):format(id))
     Config.garages[id].disabled = true
 end)

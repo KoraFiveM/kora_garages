@@ -181,4 +181,4 @@ Config.ui = {
     accent = false, -- '#RRGGBB' to override kora_theme's colour, or false to follow it
 }
 
-if QB and QB.config and QB.config.adopt then Config = QB.config.adopt(Config) end
+if Kora and Kora.config and Kora.config.adopt then Config = Kora.config.adopt(Config) end

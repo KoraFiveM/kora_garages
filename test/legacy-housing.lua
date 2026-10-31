@@ -4,7 +4,7 @@ for _, exists in ipairs({ 0, 1 }) do
     local env = {
         Config = { garages = {} },
         PropertyGarages = {},
-        QB = {
+        Kora = {
             callback = { register = function() end },
             sql = {
                 scalar = function(sql, params)

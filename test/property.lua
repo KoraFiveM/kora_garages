@@ -40,10 +40,10 @@ local function setup(stored)
     env.CreateThread = function(fn) f.threads[#f.threads + 1] = fn end
     env.AddEventHandler = function(name, fn) f.events[name] = fn end
     env.RegisterCommand, env.TriggerClientEvent, env.TriggerEvent = function() end, function() end, function() end
-    env.QB = { compat = { isCallable = function(value) return type(value) == 'function' end },
+    env.Kora = { compat = { isCallable = function(value) return type(value) == 'function' end },
         distance = { player = function() return not f.tooFar end },
         callback = { register = function(name, fn) f.callbacks[name] = fn end }, sql = { NULL = 'NULL' } }
-    local sql = env.QB.sql
+    local sql = env.Kora.sql
     sql.ready, sql.migrateFiles = function() return true end, function() return true end
     sql.single = function() return copy(f.vehicle) end
     sql.query = function(statement)
