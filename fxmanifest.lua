@@ -5,6 +5,7 @@ lua54 'yes'
 name 'kora_garages'
 -- Keep the legacy resource name resolvable for exports['qbgarages'] callers.
 provide 'qbgarages'
+provide 'qb-garages'
 author 'qbcore2'
 version '0.2.0'
 description 'Player-owned vehicle garages: store/retrieve, job and gang fleets, private house garages, and an impound lot with a fee'
@@ -26,10 +27,12 @@ shared_scripts {
 server_scripts {
     'server/property.lua',
     'server/server.lua',
+    'server/compat.lua',
 }
 
 files { 'sql/001_property_garages.sql' }
 
 client_scripts {
     'client/client.lua',
+    'client/compat.lua',
 }
