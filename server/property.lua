@@ -54,6 +54,38 @@ local function withWrite(id, plate, handler)
     return table.unpack(result, 2, result.n)
 end
 
+local cosmeticKeys
+local function isCosmetic(key)
+    if not cosmeticKeys then
+        cosmeticKeys = {}
+        for _, name in ipairs(Config.mods and Config.mods.cosmetic or {}) do cosmeticKeys[name] = true end
+    end
+    if cosmeticKeys[key] then return true end
+    if type(key) == 'string' then
+        if key:find('^mod%u') then return true end
+        key = tonumber(key)
+    end
+    return type(key) == 'number' and key >= 0 and key <= 49 and key % 1 == 0
+end
+
+-- Unless Config.TrustClientCosmetics is on, paid-for look (Config.mods.cosmetic, every
+-- `mod*` slot and numeric mod indexes 0-49) comes from the stored row, never the client.
+-- Vehicles with no stored props fall back to whatever the client sent.
+function Property.resolveMods(vehicle, mods)
+    if Config.TrustClientCosmetics then return mods end
+    local stored = vehicle and vehicle.mods
+    if type(stored) ~= 'table' or next(stored) == nil then return mods end
+    if type(mods) ~= 'table' then return stored end
+    local result = {}
+    for key, value in pairs(mods) do
+        if not isCosmetic(key) then result[key] = value end
+    end
+    for key, value in pairs(stored) do
+        if isCosmetic(key) then result[key] = value end
+    end
+    return result
+end
+
 function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
     return withWrite(id, vehicle.plate, function()
         local garage = Config.garages[id]
@@ -76,6 +108,7 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
         end
         if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
         if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
+        mods = Property.resolveMods(vehicle, mods)
         if not recovered then
             local rows, queryErr = Kora.sql.query('SELECT `citizenid` FROM `player_vehicles` WHERE `garage_id`=? AND `state`=\'garaged\' AND `deleted_at` IS NULL', { id })
             if not rows or queryErr then return false, queryErr or 'Garage storage is unavailable.' end

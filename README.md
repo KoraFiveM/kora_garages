@@ -62,3 +62,12 @@ is built from `Config.garages`. The client events `setHouseGarage`,
 `houseGarageConfig` and `addHouseGarage` are accepted as no-ops, since house
 garages come from kora_housing via `RegisterPropertyGarage`. Stock
 `updateVehicleState`/`updateVehicleStats` are not registered.
+
+## Cosmetic protection
+
+By default (`Config.TrustClientCosmetics = false`) parking a vehicle never changes its
+stored look. Fields in `Config.mods.cosmetic`, every `mod*` slot and numeric mod
+indexes 0-49 are kept from the database row; only non-cosmetic state (fuel, health,
+dirt, damage) is taken from the client. Vehicles with no stored props still save the
+client props. Set `Config.TrustClientCosmetics = true` to restore the old behaviour,
+e.g. if a customs resource saves the look through the garage store event.

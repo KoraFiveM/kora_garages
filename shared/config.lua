@@ -153,6 +153,11 @@ Config.spawn = {
     applyMods = true,         -- reapply the stored cosmetic mods on take-out
 }
 
+-- false: parking never changes the stored look; Config.mods.cosmetic (plus every mod* slot and
+-- numeric mod 0-49) is kept from the database so unpaid previews (paint, tint) are not saved.
+-- Vehicles with no stored props still take the client props. true: save whatever the client sends.
+Config.TrustClientCosmetics = false
+
 Config.mods = {
     cosmetic = {
         'plateIndex', 'color1', 'color2', 'pearlescentColor', 'dashboardColor',
@@ -167,7 +172,9 @@ Config.mods = {
         'modDoorSpeaker', 'modSeats', 'modSteeringWheel', 'modShifterLeavers',
         'modAPlate', 'modSpeakers', 'modTrunk', 'modHydrolic', 'modEngineBlock',
         'modAirFilter', 'modStruts', 'modArchCover', 'modAerials', 'modTrimB',
-        'modTank', 'modWindows',
+        'modTank', 'modWindows', 'wheelType', 'livery', 'oldLivery', 'paintType1',
+        'paintType2', 'color1Custom', 'color2Custom', 'customPrimaryColor',
+        'customSecondaryColor', 'headlightColor', 'neonColors', 'xenonColour',
     },
     entryCap = 80, -- more keys than this and the whole blob is dropped
 }

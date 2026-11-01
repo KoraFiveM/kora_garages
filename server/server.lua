@@ -191,7 +191,7 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
         engineHealth = math.floor(GetVehicleEngineHealth(entity)),
         bodyHealth = math.floor(GetVehicleBodyHealth(entity)),
         fuel = math.floor(fuel),
-        mods = type(mods) == 'table' and mods or nil,
+        mods = PropertyGarages.resolveMods(vehicle, type(mods) == 'table' and mods or nil),
     }
 
     Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})

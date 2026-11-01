@@ -229,4 +229,22 @@ H.test('take-out still works when the kora_core tagVehicle export is missing', f
     H.assertEqual(f.vehicle.state, 'out'); H.assertEqual(#f.bag, 0)
 end)
 
+H.test('storing keeps the stored cosmetics unless the client is trusted', function()
+    local f = setup()
+    local resolve, config = f.property.resolveMods, f.env.Config
+    config.mods = { cosmetic = { 'color1', 'windowTint', 'neonColor', 'extras', 'wheelType' } }
+    local row = { mods = { color1 = 1, windowTint = 0, modSpoilers = 2, [23] = 4, extras = { ["1"] = true }, fuelLevel = 50 } }
+    local client = { color1 = 99, windowTint = 3, modSpoilers = 7, [23] = 9, neonColor = { 255, 0, 0 }, extras = { ["1"] = false },
+        modTurbo = true, fuelLevel = 20, dirtLevel = 4.0, engineHealth = 800 }
+    local out = resolve(row, client)
+    H.assertEqual(out.color1, 1); H.assertEqual(out.windowTint, 0); H.assertEqual(out.modSpoilers, 2)
+    H.assertEqual(out[23], 4); H.assertEqual(out.extras["1"], true)
+    H.assertEqual(out.neonColor, nil); H.assertEqual(out.modTurbo, nil)
+    H.assertEqual(out.fuelLevel, 20); H.assertEqual(out.dirtLevel, 4.0); H.assertEqual(out.engineHealth, 800)
+    H.assertEqual(resolve({}, client), client); H.assertEqual(resolve({ mods = {} }, client), client)
+    H.assertEqual(resolve(row, nil), row.mods)
+    config.TrustClientCosmetics = true
+    H.assertEqual(resolve(row, client), client)
+end)
+
 H.report('qbgarages property integration')
