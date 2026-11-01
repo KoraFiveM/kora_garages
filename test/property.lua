@@ -9,10 +9,10 @@ vectorMeta.__sub = function(a, b) return setmetatable({ x = a.x - b.x, y = a.y -
 vectorMeta.__len = function(a) return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) end
 local function vector(x, y, z, w) return setmetatable({ x = x, y = y, z = z, w = w }, vectorMeta) end
 
-local function setup(stored)
+local function setup(stored, opts)
     local f = { provided = {}, callbacks = {}, events = {}, threads = {}, caller = 'housing', allowed = true,
-        vehicle = { plate = 'ABC123', citizenid = 'CID1', state = 'out', model = 'car', fuel = 50, engine_health = 900, body_health = 900 },
-        rows = {}, deleted = 0, plate = 'ABC123', entityBucket = 0, exists = true, writes = 0 }
+        vehicle = { id = 7, plate = 'ABC123', citizenid = 'CID1', state = 'out', model = 'car', fuel = 50, engine_health = 900, body_health = 900 },
+        rows = {}, bag = {}, noTagExport = opts and opts.noTagExport, convar = 1, deleted = 0, plate = 'ABC123', entityBucket = 0, exists = true, writes = 0 }
     local env = {}; for key, value in pairs(_G) do env[key] = value end
     env.Core, env.PropertyGarages, env.json = { garage = {} }, nil, json
     env.Config = { garages = { public = { coords = vector(0, 0, 0), spawn = vector(0, 0, 0, 0), type = 'public', label = 'Public' } },
@@ -35,7 +35,14 @@ local function setup(stored)
     env.DeleteEntity = function() f.deleted = f.deleted + 1 end
     env.CreateVehicle, env.CreateVehicleServerSetter = function() return 99 end, function() return 99 end
     env.SetEntityRoutingBucket, env.SetVehicleNumberPlateText, env.SetVehicleBodyHealth = function() end, function() end, function() end
-    env.GetGameTimer = function() return 0 end
+    env.GetGameTimer = function() return f.clock or 0 end
+    env.Wait = function() f.clock = (f.clock or 0) + 1000 end
+    env.GetConvarInt = function(name, default) if name == 'kora:vehicleIdStateBag' then return f.convar end return default end
+    env.Entity = function(e)
+        return { state = { set = function(_, key, value, replicated)
+            f.bag[#f.bag + 1] = { entity = e, key = key, value = value, replicated = replicated }
+        end } }
+    end
     env.joaat = function() return 123 end
     env.CreateThread = function(fn) f.threads[#f.threads + 1] = fn end
     env.AddEventHandler = function(name, fn) f.events[name] = fn end
@@ -82,6 +89,7 @@ local function setup(stored)
         getShared = function() return {} end,
         storeVehicle = function(_, ...) return env.Core.garage.storeVehicle(...) end,
         spawnVehicle = function(_, ...) return env.Core.garage.spawnVehicle(...) end,
+        tagVehicle = (not f.noTagExport) and function(_, ...) return env.Core.garage.tagVehicle(...) end or nil,
     }, kora_vehiclekeys = { giveKeys = function() end } }, { __call = function(_, name, fn) f.provided[name] = fn end })
     assert(loadfile('server/property.lua', 't', env))()
     assert(loadfile('server/server.lua', 't', env))()
@@ -182,6 +190,43 @@ H.test('core checks current vehicle ownership before persisting a stale housing 
     f.beforeCapacity = function() f.vehicle.citizenid = 'SECOND' end
     H.assertEqual(f.call('store', 'home', 'ABC123', 99, 50, {}), false)
     H.assertEqual(f.deleted, 0); H.assertEqual(f.writes, 0)
+end)
+
+H.test('public take-out tags the entity with the non-replicated vehicleid state bag', function()
+    local f = setup()
+    f.vehicle.state = 'garaged'
+    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertEqual(#f.bag, 1)
+    H.assertEqual(f.bag[1].entity, 99); H.assertEqual(f.bag[1].key, 'vehicleid'); H.assertEqual(f.bag[1].value, 7)
+    H.assertTrue(f.bag[1].replicated == false, 'bag must be server-only')
+end)
+
+H.test('property take-out is tagged through the kora_core spawn path', function()
+    local f = setup(); assert(f.register())
+    f.vehicle.state, f.vehicle.garage_id = 'garaged', 'home'
+    H.assertTrue(f.call('takeOut', 'home', 'ABC123'))
+    H.assertEqual(#f.bag, 1); H.assertEqual(f.bag[1].value, 7); H.assertTrue(f.bag[1].replicated == false)
+end)
+
+H.test('vehicleid state bag respects the convar and is skipped on spawn or DB failure', function()
+    local f = setup()
+    f.vehicle.state, f.convar = 'garaged', 0
+    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertEqual(#f.bag, 0)
+    local g = setup()
+    g.vehicle.state, g.exists = 'garaged', false
+    H.assertEqual(g.call('takeOut', 'public', 'ABC123'), false)
+    local h = setup()
+    h.vehicle.state, h.failSave = 'garaged', true
+    h.call('takeOut', 'public', 'ABC123')
+    H.assertEqual(#g.bag + #h.bag, 0)
+end)
+
+H.test('take-out still works when the kora_core tagVehicle export is missing', function()
+    local f = setup(nil, { noTagExport = true })
+    f.vehicle.state = 'garaged'
+    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertEqual(f.vehicle.state, 'out'); H.assertEqual(#f.bag, 0)
 end)
 
 H.report('qbgarages property integration')

@@ -57,6 +57,13 @@ local function ownsVehicle(src, plate)
     return vehicle
 end
 
+-- Tags the spawned entity with player_vehicles.id (server-only `vehicleid` state
+-- bag, read by stock ox_inventory). Older kora_core builds lack the export, so
+-- the call is guarded and silently does nothing there.
+local function tagVehicle(entity, id)
+    pcall(function() return exports.kora_core:tagVehicle(entity, id) end)
+end
+
 Kora.callback.register('qbgarages:list', function(src, garageId)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
@@ -146,7 +153,8 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
         end
     end
 
-    Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
+    local affected = Kora.sql.update('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
+    if affected == 1 then tagVehicle(entity, vehicle.id) end
     exports.kora_vehiclekeys:giveKeys(src, plate)
     allVehs[plate] = entity
     return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
