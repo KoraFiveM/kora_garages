@@ -52,3 +52,13 @@ Run `lua test/property.lua` and `lua test/legacy-housing.lua` from this resource
 to validate the property adapter, vehicle id tagging and legacy caller compatibility
 (run from a sibling layout with `../kora_core` and `../kora_lib` present). These use
 native/SQL fixtures; live multiplayer acceptance requires FXServer.
+
+## qb-garages compatibility
+
+The resource provides `qb-garages`. `qb-garages:server:GetPlayerVehicles` returns
+the caller's own vehicles in the stock shape (`nil` when there are none; one call
+per second per player; arguments are ignored). `exports['qb-garages']:getAllGarages()`
+is built from `Config.garages`. The client events `setHouseGarage`,
+`houseGarageConfig` and `addHouseGarage` are accepted as no-ops, since house
+garages come from kora_housing via `RegisterPropertyGarage`. Stock
+`updateVehicleState`/`updateVehicleStats` are not registered.
