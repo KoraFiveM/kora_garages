@@ -13,8 +13,6 @@ local function normalPlate(plate)
     return (tostring(plate):gsub('%s+', ''):upper())
 end
 
--- --- vehicles -----------------------------------------------------------------
-
 local function waitForEntity(netId)
     local deadline = GetGameTimer() + 5000
     while GetGameTimer() < deadline do
