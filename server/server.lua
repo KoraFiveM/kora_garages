@@ -26,7 +26,7 @@ Kora.callback.register('qbgarages:getGarages', function()
     return Config.garages
 end)
 
-Kora.callback.register('qbgarages:houseGarages', function(src)
+Kora.callback.register('qbgarages:houseGarages', function()
     return Config.garages
 end)
 
@@ -88,7 +88,6 @@ Kora.callback.register('qbgarages:list', function(src, garageId)
     end
     return { garage = { id = garageId, label = garage.label, type = garage.type }, vehicles = list }
 end)
-
 
 local vehicleTypes = {
     boats = 'boat',
@@ -167,7 +166,6 @@ local function getVehicleByPlate(plate)
             return vehicle
         end
     end
-    return nil
 end
 
 Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, fuel, mods)
@@ -187,9 +185,7 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
     local entity = NetworkGetEntityFromNetworkId(tonumber(netId))
     if not entity or entity == 0 or not DoesEntityExist(entity) then
         entity = getVehicleByPlate(plate)
-        if not entity then
-            return false, 'That vehicle is not here'
-        end
+        if not entity then return false, 'That vehicle is not here' end
     end
     local snapshot = {
         engineHealth = math.floor(GetVehicleEngineHealth(entity)),
@@ -198,7 +194,7 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
         mods = type(mods) == 'table' and mods or nil,
     }
 
-    local confirmed = Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
     DeleteEntity(entity)
     allVehs[plate] = nil
     return true
@@ -216,7 +212,6 @@ local function isVehicleOccupied(vehicle)
 end
 
 local function removeVehicles(minutes)
-
     local function removeAll()
         for plate, entity in pairs(allVehs) do
             if DoesEntityExist(entity) and not isVehicleOccupied(entity) then
