@@ -119,10 +119,12 @@ local function describe(vehicle, policy)
     end
     return 'In the garage', 'Take out', 'car-front'
 end
+
 local function getModelName(model)
     local veh = exports.kora_core:getShared('vehicles', model)
     return veh and veh.name or 'Unknown Vehicle'
 end
+
 local function openGarage(garageId)
     if busy then return end
 
@@ -178,13 +180,11 @@ local function openGarage(garageId)
                 Kora.nui.closeApp('qbgarages:garage')
 
                 CreateThread(function()
-                    local ok, failure = pcall(function()
+                    local ok = pcall(function()
                         if vehicle.state == 'out' then store(garageId, plate) else takeOut(garageId, plate) end
                     end)
                     busy = false
-                    if not ok then
-                        notify('Something went wrong.')
-                    end
+                    if not ok then notify('Something went wrong.') end
                 end)
 
                 return {}
@@ -193,7 +193,6 @@ local function openGarage(garageId)
         Kora.nui.openApp('qbgarages:garage')
     end)
 end
-
 
 local function mayUse(garage)
     local policy = Config.garageTypes[garage.type]
@@ -208,8 +207,7 @@ local function mayUse(garage)
 
     if garage.gang then
         local gang = exports.kora_core:getGang()
-        if type(gang) ~= 'table' or gang.name ~= garage.gang then return false end
-        return true
+        return type(gang) == 'table' and gang.name == garage.gang
     end
 
     return true
@@ -225,7 +223,7 @@ local function addZone(id, garage)
         {
             label = (impound and 'Collect from %s' or 'Open %s'):format(garage.label),
             icon = impound and 'car-front' or 'warehouse',
-            canInteract = function()return mayUse(garage) end,
+            canInteract = function() return mayUse(garage) end,
             action = function() openGarage(id) end,
         },
     }, Config.debug)
