@@ -116,6 +116,14 @@ local function pickSpawn(garage)
     end
 end
 
+local pendingOut = {}
+
+local function discardPending(plate)
+    local pending = pendingOut[plate]
+    pendingOut[plate] = nil
+    if pending and DoesEntityExist(pending.entity) then DeleteEntity(pending.entity) end
+end
+
 Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
@@ -133,6 +141,8 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     if garage.property then return PropertyGarages.takeOut(src, garageId, vehicle, spawn) end
     if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
 
+    if pendingOut[plate] and DoesEntityExist(pendingOut[plate].entity) then return false, 'That vehicle is already being brought out' end
+
     local model = tonumber(vehicle.model) or joaat(tostring(vehicle.model):lower())
     local entity = CreateVehicleServerSetter(model, vehicleType(vehicle.model), spawn.x, spawn.y, spawn.z, spawn.w)
 
@@ -142,6 +152,27 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
 
     SetEntityRoutingBucket(entity, GetPlayerRoutingBucket(src))
     SetVehicleNumberPlateText(entity, plate)
+
+    -- State only becomes 'out' once the client confirms it can see the vehicle.
+    -- If it never confirms, the entity is removed and nothing was changed.
+    local pending = { entity = entity, src = src, vehicle = vehicle }
+    pendingOut[plate] = pending
+    SetTimeout(Config.spawn.timeout + 5000, function()
+        if pendingOut[plate] == pending then discardPending(plate) end
+    end)
+
+    return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods, timeout = Config.spawn.timeout }
+end)
+
+Kora.callback.register('qbgarages:confirmOut', function(src, plate, netId)
+    local pending = pendingOut[plate]
+    if not pending or pending.src ~= src then return false, 'That vehicle is no longer being brought out' end
+    local entity, vehicle = pending.entity, pending.vehicle
+    if not DoesEntityExist(entity) or NetworkGetNetworkIdFromEntity(entity) ~= netId then
+        discardPending(plate)
+        return false, 'Could not spawn that vehicle'
+    end
+    pendingOut[plate] = nil
 
     if vehicle.state == 'impounded' then
         local fee = tonumber(vehicle.impound_fee) or Config.impound.defaultFee
@@ -156,7 +187,13 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     if affected == 1 then tagVehicle(entity, vehicle.id) end
     exports.kora_vehiclekeys:giveKeys(src, plate)
     allVehs[plate] = entity
-    return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods }
+    return true
+end)
+
+Kora.callback.register('qbgarages:cancelOut', function(src, plate)
+    local pending = pendingOut[plate]
+    if pending and pending.src == src then discardPending(plate) end
+    return true
 end)
 
 local function getVehicleByPlate(plate)

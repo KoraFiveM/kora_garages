@@ -13,8 +13,8 @@ local function normalPlate(plate)
     return (tostring(plate):gsub('%s+', ''):upper())
 end
 
-local function waitForEntity(netId)
-    local deadline = GetGameTimer() + 5000
+local function waitForEntity(netId, timeout)
+    local deadline = GetGameTimer() + (timeout or 5000)
     while GetGameTimer() < deadline do
         if NetworkDoesNetworkIdExist(netId) then
             local entity = NetworkGetEntityFromNetworkId(netId)
@@ -82,8 +82,14 @@ local function takeOut(garageId, plate)
     local result, err = Kora.callback.trigger('qbgarages:takeOut', garageId, plate)
     if not result then return notify(err or 'You cannot take that out.') end
 
-    local entity = waitForEntity(result.netId)
-    if not entity then return notify('Your vehicle did not spawn.') end
+    local entity = waitForEntity(result.netId, result.timeout)
+    if not entity then
+        Kora.callback.trigger('qbgarages:cancelOut', plate)
+        return notify('Your vehicle did not spawn, it is still in the garage.')
+    end
+
+    local confirmed, confirmErr = Kora.callback.trigger('qbgarages:confirmOut', plate, result.netId)
+    if not confirmed then return notify(confirmErr or 'Your vehicle did not spawn.') end
 
     applyMods(entity, result.mods)
     if Config.spawn.warpIntoVehicle then SetPedIntoVehicle(PlayerPedId(), entity, -1) end

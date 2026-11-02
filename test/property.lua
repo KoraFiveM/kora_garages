@@ -12,11 +12,11 @@ local function vector(x, y, z, w) return setmetatable({ x = x, y = y, z = z, w =
 local function setup(stored, opts)
     local f = { provided = {}, callbacks = {}, events = {}, threads = {}, caller = 'housing', allowed = true,
         vehicle = { id = 7, plate = 'ABC123', citizenid = 'CID1', state = 'out', model = 'car', fuel = 50, engine_health = 900, body_health = 900 },
-        rows = {}, bag = {}, noTagExport = opts and opts.noTagExport, convar = 1, deleted = 0, plate = 'ABC123', entityBucket = 0, exists = true, writes = 0 }
+        rows = {}, timeouts = {}, bag = {}, noTagExport = opts and opts.noTagExport, convar = 1, deleted = 0, plate = 'ABC123', entityBucket = 0, exists = true, writes = 0 }
     local env = {}; for key, value in pairs(_G) do env[key] = value end
     env.Core, env.PropertyGarages, env.json = { garage = {} }, nil, json
     env.Config = { garages = { public = { coords = vector(0, 0, 0), spawn = vector(0, 0, 0, 0), type = 'public', label = 'Public' } },
-        interaction = { distance = 4, storeDistance = 12 }, spawn = { clearance = 2 }, garage = { spawnNetworkIdTimeout = 1000 } }
+        interaction = { distance = 4, storeDistance = 12 }, spawn = { clearance = 2, timeout = 10000 }, garage = { spawnNetworkIdTimeout = 1000 } }
     env.GetCurrentResourceName = function() return 'kora_garages' end
     env.GetInvokingResource = function() return f.caller end
     env.vector3, env.vector4 = vector, vector
@@ -44,6 +44,7 @@ local function setup(stored, opts)
         end } }
     end
     env.joaat = function() return 123 end
+    env.SetTimeout = function(_, fn) f.timeouts[#f.timeouts + 1] = fn end
     env.CreateThread = function(fn) f.threads[#f.threads + 1] = fn end
     env.AddEventHandler = function(name, fn) f.events[name] = fn end
     env.RegisterCommand, env.TriggerClientEvent, env.TriggerEvent = function() end, function() end, function() end
@@ -98,6 +99,11 @@ local function setup(stored, opts)
     function f.register(options)
         return f.provided.RegisterPropertyGarage('home', options or { coords = { x = 0, y = 0, z = 0 }, spawn = { x = 0, y = 0, z = 0 }, slots = 1 },
             function(_, action) return f.allowed and not (action == 'store' and f.noStore) end)
+    end
+    function f.takeOutPublic(plate)
+        local result = f.call('takeOut', 'public', plate)
+        if not result then return result end
+        return f.call('confirmOut', plate, result.netId)
     end
     function f.call(name, ...) return f.callbacks['qbgarages:' .. name](1, ...) end
     return f
@@ -195,10 +201,24 @@ end)
 H.test('public take-out tags the entity with the non-replicated vehicleid state bag', function()
     local f = setup()
     f.vehicle.state = 'garaged'
-    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertTrue(f.takeOutPublic('ABC123'))
     H.assertEqual(#f.bag, 1)
     H.assertEqual(f.bag[1].entity, 99); H.assertEqual(f.bag[1].key, 'vehicleid'); H.assertEqual(f.bag[1].value, 7)
     H.assertTrue(f.bag[1].replicated == false, 'bag must be server-only')
+end)
+
+H.test('public take-out stays garaged until the client confirms, and cancel or timeout removes the entity', function()
+    local f = setup()
+    f.vehicle.state = 'garaged'
+    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertEqual(f.vehicle.state, 'garaged')
+    H.assertEqual(f.call('takeOut', 'public', 'ABC123'), false)
+    f.call('cancelOut', 'ABC123')
+    H.assertEqual(f.deleted, 1); H.assertEqual(f.vehicle.state, 'garaged')
+    H.assertEqual(f.call('confirmOut', 'ABC123', 99), false)
+    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    f.timeouts[#f.timeouts]()
+    H.assertEqual(f.deleted, 2); H.assertEqual(f.call('confirmOut', 'ABC123', 99), false)
 end)
 
 H.test('property take-out is tagged through the kora_core spawn path', function()
@@ -211,21 +231,21 @@ end)
 H.test('vehicleid state bag respects the convar and is skipped on spawn or DB failure', function()
     local f = setup()
     f.vehicle.state, f.convar = 'garaged', 0
-    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertTrue(f.takeOutPublic('ABC123'))
     H.assertEqual(#f.bag, 0)
     local g = setup()
     g.vehicle.state, g.exists = 'garaged', false
     H.assertEqual(g.call('takeOut', 'public', 'ABC123'), false)
     local h = setup()
     h.vehicle.state, h.failSave = 'garaged', true
-    h.call('takeOut', 'public', 'ABC123')
+    h.takeOutPublic('ABC123')
     H.assertEqual(#g.bag + #h.bag, 0)
 end)
 
 H.test('take-out still works when the kora_core tagVehicle export is missing', function()
     local f = setup(nil, { noTagExport = true })
     f.vehicle.state = 'garaged'
-    H.assertTrue(f.call('takeOut', 'public', 'ABC123'))
+    H.assertTrue(f.takeOutPublic('ABC123'))
     H.assertEqual(f.vehicle.state, 'out'); H.assertEqual(#f.bag, 0)
 end)
 

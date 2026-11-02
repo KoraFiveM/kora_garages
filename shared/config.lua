@@ -151,6 +151,7 @@ Config.spawn = {
     clearance = 3.0,          -- metres a spawn point must be clear to be used
     warpIntoVehicle = false,  -- put the player straight into the driver's seat
     applyMods = true,         -- reapply the stored cosmetic mods on take-out
+    timeout = 10000,          -- ms the client may take to see the spawned vehicle before the take-out is cancelled (state stays garaged)
 }
 
 -- false: parking never changes the stored look; Config.mods.cosmetic (plus every mod* slot and
