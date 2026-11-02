@@ -70,10 +70,10 @@ local function findVehicle(plate)
         return current
     end
 
-    for _, vehicle in ipairs(GetGamePool('CVehicle')) do
-        if #(GetEntityCoords(vehicle) - pedCoords) <= Config.interaction.storeDistance
-            and normalPlate(GetVehicleNumberPlateText(vehicle)) == wanted then
-            return vehicle
+    local nearby = Kora.world.getNearbyEntities('vehicle', pedCoords, Config.interaction.storeDistance, { includeInvisible = true })
+    for _, match in ipairs(nearby) do
+        if normalPlate(GetVehicleNumberPlateText(match.entity)) == wanted then
+            return match.entity
         end
     end
 end

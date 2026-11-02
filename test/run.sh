@@ -6,3 +6,4 @@ cd "$dir/.."
 "${LUA:-lua}" test/legacy-housing.lua
 "${LUA:-lua}" test/property.lua
 "${LUA:-lua}" test/compat.lua
+"${LUA:-lua}" test/client.lua
