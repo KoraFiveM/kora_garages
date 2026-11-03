@@ -261,8 +261,19 @@ H.test('storing keeps the stored cosmetics unless the client is trusted', functi
     H.assertEqual(out[23], 4); H.assertEqual(out.extras["1"], true)
     H.assertEqual(out.neonColor, nil); H.assertEqual(out.modTurbo, nil)
     H.assertEqual(out.fuelLevel, 20); H.assertEqual(out.dirtLevel, 4.0); H.assertEqual(out.engineHealth, 800)
-    H.assertEqual(resolve({}, client), client); H.assertEqual(resolve({ mods = {} }, client), client)
     H.assertEqual(resolve(row, nil), row.mods)
+    -- no stored look yet (a dealership row): an unpaid preview must not become its first look
+    for _, fresh in ipairs({ {}, { mods = {} }, { mods = { fuelLevel = 50, dirtLevel = 1.0 } } }) do
+        local first = resolve(fresh, client)
+        H.assertEqual(first.color1, nil); H.assertEqual(first.windowTint, nil); H.assertEqual(first.modSpoilers, nil)
+        H.assertEqual(first[23], nil); H.assertEqual(first.neonColor, nil); H.assertEqual(first.extras, nil)
+        H.assertEqual(first.fuelLevel, 20); H.assertEqual(first.dirtLevel, 4.0)
+    end
+    H.assertEqual(resolve({ mods = {} }, nil), nil)
+    config.SaveUnstoredLook = true
+    H.assertEqual(resolve({}, client), client); H.assertEqual(resolve({ mods = { fuelLevel = 50 } }, client), client)
+    H.assertEqual(resolve(row, client).color1, 1)
+    config.SaveUnstoredLook = nil
     config.TrustClientCosmetics = true
     H.assertEqual(resolve(row, client), client)
 end)

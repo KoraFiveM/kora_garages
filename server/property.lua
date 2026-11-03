@@ -68,14 +68,23 @@ local function isCosmetic(key)
     return type(key) == 'number' and key >= 0 and key <= 49 and key % 1 == 0
 end
 
+local function hasLook(props)
+    for key in pairs(props) do
+        if isCosmetic(key) then return true end
+    end
+    return false
+end
+
 -- Unless Config.TrustClientCosmetics is on, paid-for look (Config.mods.cosmetic, every
 -- `mod*` slot and numeric mod indexes 0-49) comes from the stored row, never the client.
--- Vehicles with no stored props fall back to whatever the client sent.
+-- A row with no stored look yet (dealership rows have no props) keeps none either, so an
+-- unpaid preview can't become its first look, unless Config.SaveUnstoredLook is on.
 function Property.resolveMods(vehicle, mods)
     if Config.TrustClientCosmetics then return mods end
     local stored = vehicle and vehicle.mods
-    if type(stored) ~= 'table' or next(stored) == nil then return mods end
-    if type(mods) ~= 'table' then return stored end
+    if type(stored) ~= 'table' then stored = {} end
+    if Config.SaveUnstoredLook and not hasLook(stored) then return mods end
+    if type(mods) ~= 'table' then return next(stored) ~= nil and stored or nil end
     local result = {}
     for key, value in pairs(mods) do
         if not isCosmetic(key) then result[key] = value end

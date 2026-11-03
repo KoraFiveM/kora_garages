@@ -68,6 +68,8 @@ garages come from kora_housing via `RegisterPropertyGarage`. Stock
 By default (`Config.TrustClientCosmetics = false`) parking a vehicle never changes its
 stored look. Fields in `Config.mods.cosmetic`, every `mod*` slot and numeric mod
 indexes 0-49 are kept from the database row; only non-cosmetic state (fuel, health,
-dirt, damage) is taken from the client. Vehicles with no stored props still save the
-client props. Set `Config.TrustClientCosmetics = true` to restore the old behaviour,
+dirt, damage) is taken from the client. A vehicle with no stored look yet (dealership
+rows have no props) stores no cosmetics when parked, so an unpaid preview can't become
+its look; it keeps the game's default look for its model until a paid order stores one.
+`Config.SaveUnstoredLook = true` records the client's look on that first park instead. Set `Config.TrustClientCosmetics = true` to restore the old behaviour,
 e.g. if a customs resource saves the look through the garage store event.

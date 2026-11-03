@@ -156,8 +156,15 @@ Config.spawn = {
 
 -- false: parking never changes the stored look; Config.mods.cosmetic (plus every mod* slot and
 -- numeric mod 0-49) is kept from the database so unpaid previews (paint, tint) are not saved.
--- Vehicles with no stored props still take the client props. true: save whatever the client sends.
+-- true: save whatever the client sends.
 Config.TrustClientCosmetics = false
+
+-- With TrustClientCosmetics off, a vehicle with no stored look yet (dealership rows have no props):
+-- false: parking it stores no cosmetics; only a paid order (kora_customs) stores a look, and until
+--        then it spawns with the game's default look for its model, which may pick another colour.
+-- true:  the first park records the look the client sends, as before; an unpaid customs preview
+--        still on the car at that moment would be saved with it.
+Config.SaveUnstoredLook = false
 
 Config.mods = {
     cosmetic = {
