@@ -198,8 +198,8 @@ end)
 
 CreateThread(function()
     if not Kora.sql.ready(60000) then return end
-    local migrated, migrationErr = Kora.sql.migrateFiles(GetCurrentResourceName(), { { version = 1, name = 'property_garages', file = 'sql/001_property_garages.sql' } })
-    if not migrated or migrationErr then return end
+    local ensured, schemaErr = Kora.sql.ensureTables(QBGaragesSchema)
+    if not ensured then return print('[qbgarages] Schema setup failed: ' .. tostring(schemaErr)) end
     local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `qbgarages_property_garages`')
     if not rows or err then return end
     for _, row in ipairs(rows) do

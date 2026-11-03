@@ -25,12 +25,11 @@ shared_scripts {
 }
 
 server_scripts {
+    'server/schema.lua',
     'server/property.lua',
     'server/server.lua',
     'server/compat.lua',
 }
-
-files { 'sql/001_property_garages.sql' }
 
 client_scripts {
     'client/client.lua',

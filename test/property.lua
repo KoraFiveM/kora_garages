@@ -52,7 +52,7 @@ local function setup(stored, opts)
         distance = { player = function() return not f.tooFar end },
         callback = { register = function(name, fn) f.callbacks[name] = fn end }, sql = { NULL = 'NULL' } }
     local sql = env.Kora.sql
-    sql.ready, sql.migrateFiles = function() return true end, function() return true end
+    sql.ready, sql.ensureTables = function() return true end, function() return {} end
     sql.single = function() return copy(f.vehicle) end
     sql.query = function(statement)
         if statement:find('qbgarages_property_garages', 1, true) then return stored or {} end
@@ -92,6 +92,7 @@ local function setup(stored, opts)
         spawnVehicle = function(_, ...) return env.Core.garage.spawnVehicle(...) end,
         tagVehicle = (not f.noTagExport) and function(_, ...) return env.Core.garage.tagVehicle(...) end or nil,
     }, kora_vehiclekeys = { giveKeys = function() end } }, { __call = function(_, name, fn) f.provided[name] = fn end })
+    assert(loadfile('server/schema.lua', 't', env))()
     assert(loadfile('server/property.lua', 't', env))()
     assert(loadfile('server/server.lua', 't', env))()
     f.threads[1]()
@@ -108,6 +109,13 @@ local function setup(stored, opts)
     function f.call(name, ...) return f.callbacks['qbgarages:' .. name](1, ...) end
     return f
 end
+
+H.test('schema declares the property garages table keyed by id', function()
+    local f = setup()
+    local spec = f.env.QBGaragesSchema[1]
+    H.assertEqual(spec.name, 'qbgarages_property_garages')
+    H.assertEqual(spec.primary[1], 'id')
+end)
 
 H.test('all property garage actions require the live provider policy', function()
     local f = setup(); assert(f.register())
