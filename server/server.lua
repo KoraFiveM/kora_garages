@@ -290,4 +290,8 @@ RegisterCommand('garage:storeAll', function(source, args)
     removeVehicles(tonumber(args[1]) or 1)
 end, false)
 
-Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE state = ?', {'garaged', 'out'})
+-- Vehicles left out by a restart go back to the garage; on a blank database player_vehicles appears after kora_core's schema setup.
+CreateThread(function()
+    if not Kora.sql.awaitTables({ 'player_vehicles' }, 60000) then return end
+    Kora.sql.query('UPDATE player_vehicles SET state = ? WHERE state = ?', {'garaged', 'out'})
+end)

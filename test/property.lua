@@ -52,7 +52,7 @@ local function setup(stored, opts)
         distance = { player = function() return not f.tooFar end },
         callback = { register = function(name, fn) f.callbacks[name] = fn end }, sql = { NULL = 'NULL' } }
     local sql = env.Kora.sql
-    sql.ready, sql.ensureTables = function() return true end, function() return {} end
+    sql.ready, sql.ensureTables, sql.awaitTables = function() return true end, function() return {} end, function() return true end
     sql.single = function() return copy(f.vehicle) end
     sql.query = function(statement)
         if statement:find('qbgarages_property_garages', 1, true) then return stored or {} end
