@@ -55,7 +55,7 @@ local function setup(stored, opts)
     sql.ready, sql.ensureTables, sql.awaitTables = function() return true end, function() return {} end, function() return true end
     sql.single = function() return copy(f.vehicle) end
     sql.query = function(statement)
-        if statement:find('qbgarages_property_garages', 1, true) then return stored or {} end
+        if statement:find('kora_garages_property_garages', 1, true) then return stored or {} end
         if statement:find('SELECT `citizenid`', 1, true) then if f.beforeCapacity then f.beforeCapacity() end; return f.rows end
         return {}
     end
@@ -65,7 +65,7 @@ local function setup(stored, opts)
         return { affectedRows = 1 }
     end
     sql.update = function(statement, params)
-        if statement:find('qbgarages_property_garages', 1, true) then
+        if statement:find('kora_garages_property_garages', 1, true) then
             if f.failSave then return nil, 'controlled SQL failure' end
             f.saved = { id = params[2], provider = params[3], definition = params[1] }
             return 1
@@ -113,7 +113,7 @@ end
 H.test('schema declares the property garages table keyed by id', function()
     local f = setup()
     local spec = f.env.QBGaragesSchema[1]
-    H.assertEqual(spec.name, 'qbgarages_property_garages')
+    H.assertEqual(spec.name, 'kora_garages_property_garages')
     H.assertEqual(spec.primary[1], 'id')
 end)
 

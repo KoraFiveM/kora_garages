@@ -166,10 +166,10 @@ exports('RegisterPropertyGarage', function(id, raw, callback)
     return withWrite(id, 'registration:' .. id, function()
         local saved, saveErr
         if Property.known[id] then
-            saved, saveErr = Kora.sql.update('UPDATE `qbgarages_property_garages` SET `definition`=? WHERE `id`=? AND `provider`=?', { json.encode(garage), id, owner })
+            saved, saveErr = Kora.sql.update('UPDATE `kora_garages_property_garages` SET `definition`=? WHERE `id`=? AND `provider`=?', { json.encode(garage), id, owner })
             if saved ~= 1 then return false, saveErr or 'Garage registration changed.' end
         else
-            saved, saveErr = Kora.sql.execute('INSERT INTO `qbgarages_property_garages` (`id`,`provider`,`definition`) VALUES (?,?,?)', { id, owner, json.encode(garage) })
+            saved, saveErr = Kora.sql.execute('INSERT INTO `kora_garages_property_garages` (`id`,`provider`,`definition`) VALUES (?,?,?)', { id, owner, json.encode(garage) })
             if not saved then return false, saveErr end
         end
         Property.known[id], Property.records[id], Config.garages[id] = owner, { callback = callback, owner = owner }, garage
@@ -200,7 +200,7 @@ CreateThread(function()
     if not Kora.sql.ready(60000) then return end
     local ensured, schemaErr = Kora.sql.ensureTables(QBGaragesSchema)
     if not ensured then return print('[qbgarages] Schema setup failed: ' .. tostring(schemaErr)) end
-    local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `qbgarages_property_garages`')
+    local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `kora_garages_property_garages`')
     if not rows or err then return end
     for _, row in ipairs(rows) do
         local ok, raw = pcall(json.decode, row.definition)
