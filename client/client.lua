@@ -1,5 +1,8 @@
 local busy = false
 local blips = {}
+local markerZones = {}
+local markerNear = {}
+local markerLoopRunning = false
 
 local function notify(message, kind)
     Kora.notify.send({ title = 'Garage', message = message, type = kind or 'error' })
@@ -219,6 +222,52 @@ local function mayUse(garage)
     return true
 end
 
+local function markerLoop()
+    if markerLoopRunning then return end
+    markerLoopRunning = true
+
+    CreateThread(function()
+        local cfg = Config.markers
+        local size, color = cfg.size, cfg.color
+        while next(markerNear) do
+            for _, coords in pairs(markerNear) do
+                DrawMarker(cfg.type, coords.x, coords.y, coords.z + cfg.zOffset, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                    size.x, size.y, size.z, color.r, color.g, color.b, color.a,
+                    cfg.bobUpAndDown == true, false, 2, cfg.rotate == true, nil, nil, false)
+            end
+            Wait(0)
+        end
+        markerLoopRunning = false
+    end)
+end
+
+local function removeMarkerZone(id)
+    local zone = markerZones[id]
+    if not zone then return end
+    markerZones[id] = nil
+    markerNear[id] = nil
+    zone.remove()
+end
+
+local function addMarkerZone(id, garage)
+    local cfg = Config.markers
+    if not cfg or cfg.enabled ~= true then return end
+    if garage.disabled or garage.noMarker or not Config.garageTypes[garage.type] then return end
+    if garage.property and not cfg.houseGarages then return end
+
+    removeMarkerZone(id)
+    markerZones[id] = Kora.zones.sphere({
+        coords = toVec3(garage.coords),
+        radius = cfg.drawDistance,
+        onEnter = function()
+            if not mayUse(garage) then return end
+            markerNear[id] = toVec3(garage.coords)
+            markerLoop()
+        end,
+        onExit = function() markerNear[id] = nil end,
+    })
+end
+
 local function addZone(id, garage)
     if garage.disabled then return end
     local policy = Config.garageTypes[garage.type]
@@ -233,6 +282,7 @@ local function addZone(id, garage)
             action = function() openGarage(id) end,
         },
     }, Config.debug)
+    addMarkerZone(id, garage)
 end
 
 exports('openGarage', function(id)
@@ -287,6 +337,7 @@ end)
 RegisterNetEvent('qbgarages:propertyRegistered', function(id, garage)
     if type(id) ~= 'string' or type(garage) ~= 'table' or garage.property ~= true then return end
     Kora.interact.removeZone(('qbgarages:%s'):format(id))
+    removeMarkerZone(id)
     Config.garages[id] = garage
     addZone(id, garage)
 end)
@@ -294,5 +345,6 @@ end)
 RegisterNetEvent('qbgarages:propertyRemoved', function(id)
     if type(id) ~= 'string' or not Config.garages[id] or not Config.garages[id].property then return end
     Kora.interact.removeZone(('qbgarages:%s'):format(id))
+    removeMarkerZone(id)
     Config.garages[id].disabled = true
 end)

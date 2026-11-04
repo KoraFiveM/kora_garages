@@ -7,3 +7,4 @@ cd "$dir/.."
 "${LUA:-lua}" test/property.lua
 "${LUA:-lua}" test/compat.lua
 "${LUA:-lua}" test/client.lua
+"${LUA:-lua}" test/markers.lua

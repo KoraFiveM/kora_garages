@@ -10,6 +10,21 @@ Config.interaction = {
     requireSameBucket = true,
 }
 
+-- Ground markers at garage points. Off by default: when disabled no zones or threads are created.
+-- Proximity comes from kora_lib zones (event-driven); the per-frame DrawMarker loop only runs
+-- while the player is inside drawDistance of at least one usable garage point.
+Config.markers = {
+    enabled = false,
+    type = 36,                              -- DrawMarker type id
+    size = vector3(1.0, 1.0, 1.0),
+    color = { r = 60, g = 180, b = 255, a = 150 },
+    drawDistance = 15.0,                    -- metres from a garage point before its marker is drawn
+    zOffset = 0.0,                          -- added to the garage point's Z
+    bobUpAndDown = false,
+    rotate = false,
+    houseGarages = false,                   -- also mark house/property garages
+}
+
 Config.garageTypes = {
     public = {
         label = 'Public Garage',

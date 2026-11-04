@@ -73,3 +73,25 @@ rows have no props) stores no cosmetics when parked, so an unpaid preview can't 
 its look; it keeps the game's default look for its model until a paid order stores one.
 `Config.SaveUnstoredLook = true` records the client's look on that first park instead. Set `Config.TrustClientCosmetics = true` to restore the old behaviour,
 e.g. if a customs resource saves the look through the garage store event.
+
+## Garage markers
+
+Optional ground markers so garage points are easy to find. Off by default; when
+`Config.markers.enabled = false` no zones or threads are created.
+
+Proximity uses kora_lib sphere zones (`onEnter`/`onExit`, no polling in this
+resource). A per-frame `DrawMarker` loop runs only while the player is within
+`drawDistance` of a garage they may use, and ends when they leave.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `Config.markers.enabled` | `false` | Master switch |
+| `type` | `36` | `DrawMarker` type id |
+| `size` | `vector3(1,1,1)` | Marker scale |
+| `color` | `{r=60,g=180,b=255,a=150}` | RGBA |
+| `drawDistance` | `15.0` | Metres before the marker is drawn |
+| `zOffset` | `0.0` | Added to the garage point's Z |
+| `bobUpAndDown`, `rotate` | `false` | Marker animation |
+| `houseGarages` | `false` | Also mark property garages |
+
+Set `noMarker = true` on a garage entry to skip it. Run `lua test/markers.lua`.
