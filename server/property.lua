@@ -107,14 +107,12 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
         end
         local entity = tonumber(netId) and NetworkGetEntityFromNetworkId(tonumber(netId))
         if not entity or entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2 then return false, 'Vehicle is unavailable.' end
-        local plate = GetVehicleNumberPlateText(entity):gsub('^%s+', ''):gsub('%s+$', ''):upper()
-        if plate ~= vehicle.plate:upper() then return false, 'Vehicle plate does not match.' end
+        local plate = Kora.vehicle.normalizePlate(GetVehicleNumberPlateText(entity), { whitespace = 'remove' })
+        if plate ~= Kora.vehicle.normalizePlate(vehicle.plate, { whitespace = 'remove' }) then return false, 'Vehicle plate does not match.' end
         if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, 'Vehicle is in another routing bucket.' end
         if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
         if not Kora.distance.player(src, garage.coords, Config.interaction.distance) then return false, 'Too far from garage.' end
-        for _, player in ipairs(GetPlayers()) do
-            if tonumber(player) ~= src and GetVehiclePedIsIn(GetPlayerPed(player), false) == entity then return false, 'Vehicle is occupied.' end
-        end
+        if isVehicleOccupied(entity, src) then return false, 'Vehicle is occupied.' end
         if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
         if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
         mods = Property.resolveMods(vehicle, mods)
@@ -135,7 +133,11 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
             engineHealth = math.floor(GetVehicleEngineHealth(entity)), bodyHealth = math.floor(GetVehicleBodyHealth(entity)),
         })
         if not saved then return false, saveErr end
-        if DoesEntityExist(entity) and GetVehicleNumberPlateText(entity):gsub('^%s+', ''):gsub('%s+$', ''):upper() == vehicle.plate:upper() then DeleteEntity(entity) end
+        if DoesEntityExist(entity)
+            and Kora.vehicle.normalizePlate(GetVehicleNumberPlateText(entity), { whitespace = 'remove' })
+            == Kora.vehicle.normalizePlate(vehicle.plate, { whitespace = 'remove' }) then
+            DeleteEntity(entity)
+        end
         Property.entities[vehicle.plate] = nil
         return true
     end)

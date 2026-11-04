@@ -10,18 +10,15 @@ local function toVec3(coords)
 end
 
 local function normalPlate(plate)
-    return (tostring(plate):gsub('%s+', ''):upper())
+    return Kora.vehicle.normalizePlate(plate, { whitespace = 'remove' })
 end
 
 local function waitForEntity(netId, timeout)
-    local deadline = GetGameTimer() + (timeout or 5000)
-    while GetGameTimer() < deadline do
-        if NetworkDoesNetworkIdExist(netId) then
-            local entity = NetworkGetEntityFromNetworkId(netId)
-            if entity ~= 0 and DoesEntityExist(entity) then return entity end
-        end
-        Wait(50)
-    end
+    return Kora.loops.controlled(function()
+        if not NetworkDoesNetworkIdExist(netId) then return false end
+        local entity = NetworkGetEntityFromNetworkId(netId)
+        return entity ~= 0 and DoesEntityExist(entity) and entity or false
+    end, false, timeout or 5000, 50)
 end
 
 local toggleFields = { 'modTurbo', 'modSmokeEnabled', 'modXenon', 'modCustomTiresF', 'modCustomTiresR' }
@@ -50,12 +47,6 @@ local function applyMods(entity, mods)
     end
     if type(mods) ~= 'table' then return end
     normalizeMods(mods)
-
-    local deadline = GetGameTimer() + 2000
-    while not NetworkHasControlOfEntity(entity) and GetGameTimer() < deadline do
-        NetworkRequestControlOfEntity(entity)
-        Wait(50)
-    end
 
     Kora.vehicle.setProperties(entity, mods)
 end
@@ -104,8 +95,7 @@ local function store(garageId, plate)
     local ped = PlayerPedId()
     if GetVehiclePedIsIn(ped, false) == entity then
         TaskLeaveVehicle(ped, entity, 0)
-        local deadline = GetGameTimer() + 3000
-        while GetVehiclePedIsIn(ped, false) == entity and GetGameTimer() < deadline do Wait(100) end
+        Kora.loops.controlled(function() return GetVehiclePedIsIn(ped, false) ~= entity end, false, 3000, 100)
     end
 
     -- mods live behind client-only natives; the server treats them as untrusted
