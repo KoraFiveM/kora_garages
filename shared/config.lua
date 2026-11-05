@@ -14,7 +14,7 @@ Config.interaction = {
 -- Proximity comes from kora_lib zones (event-driven); the per-frame DrawMarker loop only runs
 -- while the player is inside drawDistance of at least one usable garage point.
 Config.markers = {
-    enabled = false,
+    enabled = true,
     type = 36,                              -- DrawMarker type id
     size = vector3(1.0, 1.0, 1.0),
     color = { r = 60, g = 180, b = 255, a = 150 },
