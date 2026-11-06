@@ -231,7 +231,11 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
         mods = PropertyGarages.resolveMods(vehicle, type(mods) == 'table' and mods or nil),
     }
 
-    Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    if Config.RecordGarageId and garage.type ~= 'impound' then
+        Kora.sql.query('UPDATE player_vehicles SET state = ?, garage_id = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', garageId, snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    else
+        Kora.sql.query('UPDATE player_vehicles SET state = ?, mods = ?, engine_health = ?, body_health = ?, fuel = ? WHERE plate = ?', {'garaged', snapshot.mods, snapshot.engineHealth, snapshot.bodyHealth, snapshot.fuel, plate})
+    end
     DeleteEntity(entity)
     allVehs[plate] = nil
     return true

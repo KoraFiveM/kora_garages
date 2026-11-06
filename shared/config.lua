@@ -181,6 +181,11 @@ Config.TrustClientCosmetics = false
 --        still on the car at that moment would be saved with it.
 Config.SaveUnstoredLook = false
 
+-- true: parking a vehicle in a non-property garage records that garage on the vehicle (player_vehicles.garage_id / garage),
+--       so the phone Garage app shows where it was parked instead of "Unknown garage".
+-- false: only property garages record a garage.
+Config.RecordGarageId = true
+
 Config.mods = {
     cosmetic = {
         'plateIndex', 'color1', 'color2', 'pearlescentColor', 'dashboardColor',
