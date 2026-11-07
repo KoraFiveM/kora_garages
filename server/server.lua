@@ -40,7 +40,13 @@ local function canUseGarage(src, garage, id, action)
     if garage.property then return PropertyGarages.authorize(src, id, action) end
     if garage.job then
         local job = exports.kora_core:getJob(src)
-        return job and job.name == garage.job
+        if not (job and job.name == garage.job) then return false end
+        -- Config.garageTypes.job.requireDuty is also enforced client-side (mayUse), but
+        -- that only gates the zone UI; a client calling these callbacks directly must be
+        -- checked here too or an off-duty player could use the job garage regardless.
+        local policy = Config.garageTypes[garage.type]
+        if policy and policy.requireDuty and not job.onduty then return false end
+        return true
     end
     if garage.gang then
         local gang = exports.kora_core:getGang(src)
@@ -48,6 +54,8 @@ local function canUseGarage(src, garage, id, action)
     end
     return true
 end
+
+local function finite(value) return type(value) == 'number' and value == value and math.abs(value) < math.huge end
 
 local function ownsVehicle(src, plate)
     local citizenid = exports.kora_core:getPlayerData(src, { 'citizenid' })
@@ -82,7 +90,7 @@ Kora.callback.register('qbgarages:list', function(src, garageId)
                 plate = vehicle.plate,
                 model = vehicle.model,
                 state = vehicle.state,
-                fee = vehicle.state == 'impounded' and (tonumber(vehicle.impound_fee) or Config.impound.fee) or nil,
+                fee = vehicle.state == 'impounded' and (tonumber(vehicle.impound_fee) or Config.impound.defaultFee) or nil,
             }
         end
     end
@@ -141,22 +149,33 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     if garage.property then return PropertyGarages.takeOut(src, garageId, vehicle, spawn) end
     if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
 
-    if pendingOut[plate] and DoesEntityExist(pendingOut[plate].entity) then return false, 'That vehicle is already being brought out' end
+    if pendingOut[plate] then return false, 'That vehicle is already being brought out' end
+
+    -- Claim the plate before the yielding spawn wait below: CreateVehicleServerSetter
+    -- plus the Wait(10) loop lets a second takeOut call for the same plate run on this
+    -- same tick before pendingOut[plate] would otherwise be set, which let a client
+    -- fire two takeOut requests back-to-back and get two vehicles out of one stored row.
+    local pending = { src = src }
+    pendingOut[plate] = pending
 
     local model = tonumber(vehicle.model) or joaat(tostring(vehicle.model):lower())
     local entity = CreateVehicleServerSetter(model, vehicleType(vehicle.model), spawn.x, spawn.y, spawn.z, spawn.w)
 
     local deadline = GetGameTimer() + 3000
     while not DoesEntityExist(entity) and GetGameTimer() < deadline do Wait(10) end
-    if not DoesEntityExist(entity) then return false, 'Could not spawn that vehicle' end
+    if not DoesEntityExist(entity) or pending.cancelled then
+        if pendingOut[plate] == pending then pendingOut[plate] = nil end
+        if DoesEntityExist(entity) then DeleteEntity(entity) end
+        return false, 'Could not spawn that vehicle'
+    end
 
     SetEntityRoutingBucket(entity, GetPlayerRoutingBucket(src))
     SetVehicleNumberPlateText(entity, plate)
 
     -- State only becomes 'out' once the client confirms it can see the vehicle.
     -- If it never confirms, the entity is removed and nothing was changed.
-    local pending = { entity = entity, src = src, vehicle = vehicle }
-    pendingOut[plate] = pending
+    pending.entity = entity
+    pending.vehicle = vehicle
     SetTimeout(Config.spawn.timeout + 5000, function()
         if pendingOut[plate] == pending then discardPending(plate) end
     end)
@@ -166,7 +185,7 @@ end)
 
 Kora.callback.register('qbgarages:confirmOut', function(src, plate, netId)
     local pending = pendingOut[plate]
-    if not pending or pending.src ~= src then return false, 'That vehicle is no longer being brought out' end
+    if not pending or pending.src ~= src or not pending.entity then return false, 'That vehicle is no longer being brought out' end
     local entity, vehicle = pending.entity, pending.vehicle
     if not DoesEntityExist(entity) or NetworkGetNetworkIdFromEntity(entity) ~= netId then
         discardPending(plate)
@@ -184,7 +203,13 @@ Kora.callback.register('qbgarages:confirmOut', function(src, plate, netId)
     end
 
     local affected = Kora.sql.update('UPDATE player_vehicles SET state = ? WHERE plate = ?', { 'out', plate })
-    if affected == 1 then tagVehicle(entity, vehicle.id) end
+    if affected ~= 1 then
+        -- DB write failed: don't hand out keys for a vehicle the DB still thinks is
+        -- garaged, or a second takeOut could spawn a dupe of the same stored row.
+        DeleteEntity(entity)
+        return false, 'Could not spawn that vehicle'
+    end
+    tagVehicle(entity, vehicle.id)
     exports.kora_vehiclekeys:giveKeys(src, plate)
     allVehs[plate] = entity
     return true
@@ -192,7 +217,9 @@ end)
 
 Kora.callback.register('qbgarages:cancelOut', function(src, plate)
     local pending = pendingOut[plate]
-    if pending and pending.src == src then discardPending(plate) end
+    if pending and pending.src == src then
+        if pending.entity then discardPending(plate) else pending.cancelled = true end
+    end
     return true
 end)
 
@@ -209,6 +236,9 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
+    -- list/takeOut both gate on canUseGarage; store was missing it, letting anyone
+    -- store their own vehicle into a job/gang-restricted garage without membership.
+    if not canUseGarage(src, garage, garageId, 'store') then return false, 'You cannot use this garage' end
 
     local vehicle, err = ownsVehicle(src, plate)
     if not vehicle then return false, err end
@@ -224,6 +254,22 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
         entity = getVehicleByPlate(plate)
         if not entity then return false, 'That vehicle is not here' end
     end
+
+    -- A spoofed netId/plate must not let a client store (and delete) someone else's
+    -- entity: verify it's actually a vehicle, actually carries this plate, in the
+    -- player's own bucket, near enough, and unoccupied before touching it.
+    if GetEntityType(entity) ~= 2 then return false, 'That vehicle is not here' end
+    if GetVehicleNumberPlateText(entity):gsub('%s+', ''):upper() ~= plate:gsub('%s+', ''):upper() then
+        return false, 'Vehicle plate does not match.'
+    end
+    if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, 'Vehicle is in another routing bucket.' end
+    if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
+    for _, player in ipairs(GetPlayers()) do
+        if tonumber(player) ~= src and GetVehiclePedIsIn(GetPlayerPed(player), false) == entity then return false, 'Vehicle is occupied.' end
+    end
+    if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
+    if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
+
     local snapshot = {
         engineHealth = math.floor(GetVehicleEngineHealth(entity)),
         bodyHealth = math.floor(GetVehicleBodyHealth(entity)),
