@@ -31,9 +31,7 @@ Kora.callback.register('qbgarages:houseGarages', function()
 end)
 
 local function nearGarage(src, garage)
-    local ped = GetPlayerPed(src)
-    local pos = GetEntityCoords(ped)
-    return #(pos - vector3(garage.coords.x, garage.coords.y, garage.coords.z)) <= Config.interaction.distance
+    return Kora.distance.player(src, garage.coords, Config.interaction.distance)
 end
 
 local function canUseGarage(src, garage, id, action)
@@ -115,7 +113,7 @@ local function pickSpawn(garage)
     for _, spawn in ipairs(garage.spawns or { garage.spawn }) do
         local free = true
         for _, other in ipairs(vehicles) do
-            if #(GetEntityCoords(other) - vector3(spawn.x, spawn.y, spawn.z)) < Config.spawn.clearance then
+            if Kora.util.vecDistance(GetEntityCoords(other), spawn) < Config.spawn.clearance then
                 free = false
                 break
             end
@@ -161,8 +159,7 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     local model = tonumber(vehicle.model) or joaat(tostring(vehicle.model):lower())
     local entity = CreateVehicleServerSetter(model, vehicleType(vehicle.model), spawn.x, spawn.y, spawn.z, spawn.w)
 
-    local deadline = GetGameTimer() + 3000
-    while not DoesEntityExist(entity) and GetGameTimer() < deadline do Wait(10) end
+    Kora.loops.controlled(function() return DoesEntityExist(entity) end, false, 3000, 10)
     if not DoesEntityExist(entity) or pending.cancelled then
         if pendingOut[plate] == pending then pendingOut[plate] = nil end
         if DoesEntityExist(entity) then DeleteEntity(entity) end
@@ -224,9 +221,9 @@ Kora.callback.register('qbgarages:cancelOut', function(src, plate)
 end)
 
 local function getVehicleByPlate(plate)
-    plate = plate:gsub('%s+', ''):upper()
+    plate = Kora.vehicle.normalizePlate(plate, { whitespace = 'remove' })
     for _, vehicle in ipairs(GetAllVehicles()) do
-        if GetVehicleNumberPlateText(vehicle):gsub('%s+', ''):upper() == plate then
+        if Kora.vehicle.normalizePlate(GetVehicleNumberPlateText(vehicle), { whitespace = 'remove' }) == plate then
             return vehicle
         end
     end
@@ -286,17 +283,6 @@ Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, 
     allVehs[plate] = nil
     return true
 end)
-
-local function isVehicleOccupied(vehicle)
-    for _, player in ipairs(GetPlayers()) do
-        local ped = GetPlayerPed(player)
-        if GetVehiclePedIsIn(ped, false) == vehicle then
-            return true
-        end
-    end
-
-    return false
-end
 
 local function removeVehicles(minutes)
     local function removeAll()
