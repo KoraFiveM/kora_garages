@@ -7,7 +7,7 @@ name 'kora_garages'
 provide 'qbgarages'
 provide 'qb-garages'
 author 'qbcore2'
-version '0.3.2'
+version '0.3.3'
 description 'Player-owned vehicle garages: store/retrieve, job and gang fleets, private house garages, and an impound lot with a fee'
 
 dependency 'kora_theme'
