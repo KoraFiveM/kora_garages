@@ -70,6 +70,15 @@ local function tagVehicle(entity, id)
     pcall(function() return exports.kora_core:tagVehicle(entity, id) end)
 end
 
+-- The stored fee, or the default, never above Config.impound.maxFee ("ceiling
+-- so a bad impound write can't bankrupt someone").
+local function impoundFee(vehicle)
+    local fee = tonumber(vehicle.impound_fee) or Config.impound.defaultFee
+    local cap = tonumber(Config.impound.maxFee)
+    if cap and fee > cap then fee = cap end
+    return fee
+end
+
 Kora.callback.register('kora_garages:list', function(src, garageId)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
@@ -88,7 +97,7 @@ Kora.callback.register('kora_garages:list', function(src, garageId)
                 plate = vehicle.plate,
                 model = vehicle.model,
                 state = vehicle.state,
-                fee = vehicle.state == 'impounded' and (tonumber(vehicle.impound_fee) or Config.impound.defaultFee) or nil,
+                fee = vehicle.state == 'impounded' and impoundFee(vehicle) or nil,
             }
         end
     end
@@ -191,7 +200,7 @@ Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
     pendingOut[plate] = nil
 
     if vehicle.state == 'impounded' then
-        local fee = tonumber(vehicle.impound_fee) or Config.impound.defaultFee
+        local fee = impoundFee(vehicle)
         local paid = exports.kora_core:removeMoney(src, 'cash', fee, 'impound-fee')
         if not paid then
             DeleteEntity(entity)
