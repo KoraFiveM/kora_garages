@@ -3,8 +3,6 @@ game 'gta5'
 lua54 'yes'
 
 name 'kora_garages'
--- Keep the legacy resource name resolvable for exports['qbgarages'] callers.
-provide 'qbgarages'
 provide 'qb-garages'
 author 'qbcore2'
 version '0.3.3'

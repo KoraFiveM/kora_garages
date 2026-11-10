@@ -22,11 +22,11 @@ CreateThread(function()
     end
 end)
 
-Kora.callback.register('qbgarages:getGarages', function()
+Kora.callback.register('kora_garages:getGarages', function()
     return Config.garages
 end)
 
-Kora.callback.register('qbgarages:houseGarages', function()
+Kora.callback.register('kora_garages:houseGarages', function()
     return Config.garages
 end)
 
@@ -70,7 +70,7 @@ local function tagVehicle(entity, id)
     pcall(function() return exports.kora_core:tagVehicle(entity, id) end)
 end
 
-Kora.callback.register('qbgarages:list', function(src, garageId)
+Kora.callback.register('kora_garages:list', function(src, garageId)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
@@ -130,7 +130,7 @@ local function discardPending(plate)
     if pending and DoesEntityExist(pending.entity) then DeleteEntity(pending.entity) end
 end
 
-Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
+Kora.callback.register('kora_garages:takeOut', function(src, garageId, plate)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end
@@ -180,7 +180,7 @@ Kora.callback.register('qbgarages:takeOut', function(src, garageId, plate)
     return { netId = NetworkGetNetworkIdFromEntity(entity), mods = vehicle.mods, timeout = Config.spawn.timeout }
 end)
 
-Kora.callback.register('qbgarages:confirmOut', function(src, plate, netId)
+Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
     local pending = pendingOut[plate]
     if not pending or pending.src ~= src or not pending.entity then return false, 'That vehicle is no longer being brought out' end
     local entity, vehicle = pending.entity, pending.vehicle
@@ -212,7 +212,7 @@ Kora.callback.register('qbgarages:confirmOut', function(src, plate, netId)
     return true
 end)
 
-Kora.callback.register('qbgarages:cancelOut', function(src, plate)
+Kora.callback.register('kora_garages:cancelOut', function(src, plate)
     local pending = pendingOut[plate]
     if pending and pending.src == src then
         if pending.entity then discardPending(plate) else pending.cancelled = true end
@@ -229,7 +229,7 @@ local function getVehicleByPlate(plate)
     end
 end
 
-Kora.callback.register('qbgarages:store', function(src, garageId, plate, netId, fuel, mods)
+Kora.callback.register('kora_garages:store', function(src, garageId, plate, netId, fuel, mods)
     local garage = Config.garages[garageId]
     if not garage then return false, 'Unknown garage' end
     if not nearGarage(src, garage) then return false, 'Too far from the garage' end

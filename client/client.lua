@@ -73,16 +73,16 @@ local function findVehicle(plate)
 end
 
 local function takeOut(garageId, plate)
-    local result, err = Kora.callback.trigger('qbgarages:takeOut', garageId, plate)
+    local result, err = Kora.callback.trigger('kora_garages:takeOut', garageId, plate)
     if not result then return notify(err or 'You cannot take that out.') end
 
     local entity = waitForEntity(result.netId, result.timeout)
     if not entity then
-        Kora.callback.trigger('qbgarages:cancelOut', plate)
+        Kora.callback.trigger('kora_garages:cancelOut', plate)
         return notify('Your vehicle did not spawn, it is still in the garage.')
     end
 
-    local confirmed, confirmErr = Kora.callback.trigger('qbgarages:confirmOut', plate, result.netId)
+    local confirmed, confirmErr = Kora.callback.trigger('kora_garages:confirmOut', plate, result.netId)
     if not confirmed then return notify(confirmErr or 'Your vehicle did not spawn.') end
 
     applyMods(entity, result.mods)
@@ -102,7 +102,7 @@ local function store(garageId, plate)
     end
 
     -- mods live behind client-only natives; the server treats them as untrusted
-    local stored, err = Kora.callback.trigger('qbgarages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
+    local stored, err = Kora.callback.trigger('kora_garages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
     if not stored then return notify(err or 'You cannot store that here.') end
 
     notify(('%s is parked.'):format(plate), 'success')
@@ -128,7 +128,7 @@ local function openGarage(garageId)
     if busy then return end
 
     CreateThread(function()
-        local payload, err = Kora.callback.trigger('qbgarages:list', garageId)
+        local payload, err = Kora.callback.trigger('kora_garages:list', garageId)
         if not payload then return notify(err or 'You cannot use this garage.') end
 
         local garage = payload.garage
@@ -151,7 +151,7 @@ local function openGarage(garageId)
         end
 
         Kora.nui.registerApp({
-            id = 'qbgarages:garage',
+            id = 'kora_garages:garage',
             title = garage.label,
             description = policy.label or 'Garage',
             icon = impound and 'lock' or 'warehouse',
@@ -176,7 +176,7 @@ local function openGarage(garageId)
                 local vehicle = type(plate) == 'string' and usable[plate] or nil
                 if actionId ~= 'garage:use' or not vehicle or busy then return {} end
                 busy = true
-                Kora.nui.closeApp('qbgarages:garage')
+                Kora.nui.closeApp('kora_garages:garage')
 
                 CreateThread(function()
                     local ok = pcall(function()
@@ -189,7 +189,7 @@ local function openGarage(garageId)
                 return {}
             end,
         })
-        Kora.nui.openApp('qbgarages:garage')
+        Kora.nui.openApp('kora_garages:garage')
     end)
 end
 
@@ -264,7 +264,7 @@ local function addZone(id, garage)
     if not policy then return end
     local impound = policy.shows == 'impounded'
 
-    Kora.interact.addBoxZone(('qbgarages:%s'):format(id), toVec3(garage.coords), toVec3(garage.size or Config.interaction.zoneSize), {
+    Kora.interact.addBoxZone(('kora_garages:%s'):format(id), toVec3(garage.coords), toVec3(garage.size or Config.interaction.zoneSize), {
         {
             label = (impound and 'Collect from %s' or 'Open %s'):format(garage.label),
             icon = impound and 'car-front' or 'warehouse',
@@ -284,7 +284,7 @@ end)
 for id, garage in pairs(Config.garages) do addZone(id, garage) end
 
 CreateThread(function()
-    local extra = Kora.callback.trigger('qbgarages:houseGarages')
+    local extra = Kora.callback.trigger('kora_garages:houseGarages')
     if type(extra) ~= 'table' then return end
 
     for id, garage in pairs(extra) do
@@ -318,23 +318,23 @@ local function createBlips()
 end
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', createBlips)
-AddEventHandler('qbcore:client:playerLoaded', createBlips)
+AddEventHandler('kora_core:client:playerLoaded', createBlips)
 
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then createBlips() end
 end)
 
-RegisterNetEvent('qbgarages:propertyRegistered', function(id, garage)
+RegisterNetEvent('kora_garages:propertyRegistered', function(id, garage)
     if type(id) ~= 'string' or type(garage) ~= 'table' or garage.property ~= true then return end
-    Kora.interact.removeZone(('qbgarages:%s'):format(id))
+    Kora.interact.removeZone(('kora_garages:%s'):format(id))
     removeMarkerZone(id)
     Config.garages[id] = garage
     addZone(id, garage)
 end)
 
-RegisterNetEvent('qbgarages:propertyRemoved', function(id)
+RegisterNetEvent('kora_garages:propertyRemoved', function(id)
     if type(id) ~= 'string' or not Config.garages[id] or not Config.garages[id].property then return end
-    Kora.interact.removeZone(('qbgarages:%s'):format(id))
+    Kora.interact.removeZone(('kora_garages:%s'):format(id))
     removeMarkerZone(id)
     Config.garages[id].disabled = true
 end)

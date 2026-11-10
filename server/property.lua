@@ -175,7 +175,7 @@ exports('RegisterPropertyGarage', function(id, raw, callback)
             if not saved then return false, saveErr end
         end
         Property.known[id], Property.records[id], Config.garages[id] = owner, { callback = callback, owner = owner }, garage
-        TriggerClientEvent('qbgarages:propertyRegistered', -1, id, garage)
+        TriggerClientEvent('kora_garages:propertyRegistered', -1, id, garage)
         return true
     end)
 end)
@@ -184,7 +184,7 @@ exports('UnregisterPropertyGarage', function(id)
     if Property.known[id] ~= (GetInvokingResource() or GetCurrentResourceName()) then return false, 'Garage is not owned by this resource.' end
     Property.records[id] = nil
     if Config.garages[id] then Config.garages[id].disabled = true end
-    TriggerClientEvent('qbgarages:propertyRemoved', -1, id)
+    TriggerClientEvent('kora_garages:propertyRemoved', -1, id)
     return true
 end)
 
@@ -193,24 +193,24 @@ AddEventHandler('onResourceStop', function(name)
         if owner == name then
             Property.records[id] = nil
             if Config.garages[id] then Config.garages[id].disabled = true end
-            TriggerClientEvent('qbgarages:propertyRemoved', -1, id)
+            TriggerClientEvent('kora_garages:propertyRemoved', -1, id)
         end
     end
 end)
 
 CreateThread(function()
     if not Kora.sql.ready(60000) then return end
-    local ensured, schemaErr = Kora.sql.ensureTables(QBGaragesSchema)
-    if not ensured then return print('[qbgarages] Schema setup failed: ' .. tostring(schemaErr)) end
+    local ensured, schemaErr = Kora.sql.ensureTables(KoraGaragesSchema)
+    if not ensured then return print('[kora_garages] Schema setup failed: ' .. tostring(schemaErr)) end
     local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `kora_garages_property_garages`')
     if not rows or err then return end
     for _, row in ipairs(rows) do
         local ok, raw = pcall(json.decode, row.definition)
         local garage = ok and definition(row.id, raw)
-        if not garage or Config.garages[row.id] then return print('[qbgarages] Invalid or conflicting property garage: ' .. tostring(row.id)) end
+        if not garage or Config.garages[row.id] then return print('[kora_garages] Invalid or conflicting property garage: ' .. tostring(row.id)) end
         garage.disabled = true
         Property.known[row.id], Config.garages[row.id] = row.provider, garage
     end
     Property.ready = true
-    TriggerEvent('qbgarages:ready')
+    TriggerEvent('kora_garages:ready')
 end)

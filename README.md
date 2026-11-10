@@ -21,7 +21,7 @@ storage. Registration returns `true` or `false, error`; the invoking resource
 owns the durable mapping. Refresh registration to update capacity or policy.
 Restored garages remain disabled until their provider rebinds, and provider
 stop/unregister immediately disables access. `UnregisterPropertyGarage(id)`
-preserves mapping and vehicles. Listen for `qbgarages:ready` to rebind after
+preserves mapping and vehicles. Listen for `kora_garages:ready` to rebind after
 garage schema initialization/restart.
 
 Clients use `exports.kora_garages:openGarage(id)` to open the existing garage UI.

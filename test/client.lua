@@ -37,9 +37,9 @@ local env = {
         },
         callback = {
             trigger = function(name, ...)
-                if name == "qbgarages:list" then
+                if name == "kora_garages:list" then
                     return { garage = { label = "G1", type = "public" }, vehicles = { { plate = "AAA 111", model = "blista", state = "out" } } }
-                elseif name == "qbgarages:store" then
+                elseif name == "kora_garages:store" then
                     storeArgs = { ... }
                     return true
                 end

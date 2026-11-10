@@ -9,10 +9,10 @@ Feature: kora_garages — Vehicles
     """
     When I go to "legion_square"
     And I manually: Alt-target the garage zone and pick 'Open <garage>'
-    Then the "qbgarages:garage" app opens
+    Then the "kora_garages:garage" app opens
     When I manually: go to Pink Cage Motel or Sandy Shores parking
     And I manually: Alt-target the garage zone and pick 'Open <garage>'
-    Then the "qbgarages:garage" app should be open
+    Then the "kora_garages:garage" app should be open
 
   @kora_garages @checklist @checklist:kora_garages:garage-vehicle-list @cat:vehicles
   Scenario: Vehicle list with state and details
@@ -20,7 +20,7 @@ Feature: kora_garages — Vehicles
     Checklist test: Open a garage: your garaged vehicles are listed with model, plate, fuel/health; the panel shows a count badge.
     """
     When I manually: open a garage I own vehicles in
-    Then the "qbgarages:garage" app should be open
+    Then the "kora_garages:garage" app should be open
     And I confirm: my garaged vehicles are listed with model, plate, fuel and health
     And I confirm: the panel shows a count badge
 
@@ -92,7 +92,7 @@ Feature: kora_garages — Vehicles
     """
     Given my gang is "ballas"
     When I manually: go to the Forum Drive Lockup and Alt-target the garage
-    Then the "qbgarages:garage" app opens
+    Then the "kora_garages:garage" app opens
     When I manually: ask a second player who is not a ballas member to approach the Forum Drive Lockup
     Then I confirm: the other player does not get the interaction
 
@@ -173,7 +173,7 @@ Feature: kora_garages — Vehicles
     """
     When I manually: leave a vehicle out of the garage and ask a Mod to restart the server
     And I manually: open the garage panel
-    Then the "qbgarages:garage" app should be open
+    Then the "kora_garages:garage" app should be open
     And I confirm: the vehicle that was out is shown as garaged again
 
   @kora_garages @checklist @checklist:kora_garages:open-garage-export @cat:vehicles @needs:admin
@@ -182,7 +182,7 @@ Feature: kora_garages — Vehicles
     Checklist test: Call exports.kora_garages:openGarage(id) from a client script: the garage panel opens, or an unavailable error is returned.
     """
     When I manually: as an admin, run the client-side code command /crun with print(exports.kora_garages:openGarage('<id of an existing garage>')), using a real garage id
-    Then the "qbgarages:garage" app opens
+    Then the "kora_garages:garage" app opens
     And I confirm: the F8 console prints true
     When I manually: as an admin, run /crun with print(exports.kora_garages:openGarage('<an id that matches no garage>'))
     Then I confirm: the F8 console prints false followed by an error message and no garage panel opens

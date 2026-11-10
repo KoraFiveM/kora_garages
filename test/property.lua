@@ -106,13 +106,13 @@ local function setup(stored, opts)
         if not result then return result end
         return f.call('confirmOut', plate, result.netId)
     end
-    function f.call(name, ...) return f.callbacks['qbgarages:' .. name](1, ...) end
+    function f.call(name, ...) return f.callbacks['kora_garages:' .. name](1, ...) end
     return f
 end
 
 H.test('schema declares the property garages table keyed by id', function()
     local f = setup()
-    local spec = f.env.QBGaragesSchema[1]
+    local spec = f.env.KoraGaragesSchema[1]
     H.assertEqual(spec.name, 'kora_garages_property_garages')
     H.assertEqual(spec.primary[1], 'id')
 end)
@@ -286,4 +286,4 @@ H.test('storing keeps the stored cosmetics unless the client is trusted', functi
     H.assertEqual(resolve(row, client), client)
 end)
 
-H.report('qbgarages property integration')
+H.report('kora_garages property integration')

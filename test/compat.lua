@@ -52,4 +52,4 @@ for _, name in ipairs({ 'setHouseGarage', 'houseGarageConfig', 'addHouseGarage' 
     assert(registered['qb-garages:client:' .. name])
     assert(registered['qb-garages:client:' .. name]({}, {}) == nil)
 end
-print('qbgarages compat: 3 passed, 0 failed')
+print('kora_garages compat: 3 passed, 0 failed')

@@ -32,4 +32,4 @@ for _, exists in ipairs({ 0, 1 }) do
     assert(queries == exists)
     assert((env.Config.garages.house_test ~= nil) == (exists == 1))
 end
-print('qbgarages: missing legacy housing skipped; existing garage data retained')
+print('kora_garages: missing legacy housing skipped; existing garage data retained')

@@ -1,4 +1,4 @@
-QBGaragesSchema = {
+KoraGaragesSchema = {
     {
         name = 'kora_garages_property_garages',
         columns = {
