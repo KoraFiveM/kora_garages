@@ -1,0 +1,219 @@
+Config = {}
+
+Config.debug = false -- draws kora_target zone outlines and enables /garagedebug
+
+Config.interaction = {
+    mode = 'target',       -- 'target' or 'interact'
+    zoneSize = vector3(6.0, 6.0, 3.0),
+    distance = 4.0,        -- how close you must be to open a garage
+    storeDistance = 12.0,  -- how close your vehicle must be to get stored
+    requireSameBucket = true,
+}
+
+-- Ground markers at garage points. Off by default: when disabled no zones or threads are created.
+-- Proximity comes from kora_lib zones (event-driven); the per-frame DrawMarker loop only runs
+-- while the player is inside drawDistance of at least one usable garage point.
+Config.markers = {
+    enabled = true,
+    type = 36,                              -- DrawMarker type id
+    size = vector3(1.0, 1.0, 1.0),
+    color = { r = 60, g = 180, b = 255, a = 150 },
+    drawDistance = 15.0,                    -- metres from a garage point before its marker is drawn
+    zOffset = 0.0,                          -- added to the garage point's Z
+    bobUpAndDown = false,
+    rotate = false,
+    houseGarages = false,                   -- also mark house/property garages
+}
+
+Config.garageTypes = {
+    public = {
+        label = 'Public Garage',
+        blipLabel = 'Garage',
+        blipSprite = 357,
+        blipColor = 3,
+        shows = 'garaged',
+    },
+    private = {
+        label = 'Private Garage',
+        blipLabel = 'Garage',
+        blipSprite = 357,
+        blipColor = 3,
+        shows = 'garaged',
+    },
+    job = {
+        label = 'Job Garage',
+        blipLabel = 'Job Garage',
+        blipSprite = 357,
+        blipColor = 38,
+        shows = 'garaged',
+        requireDuty = true,
+    },
+    gang = {
+        label = 'Gang Garage',
+        blipLabel = 'Gang Garage',
+        blipSprite = 357,
+        blipColor = 6,
+        shows = 'garaged',
+        requireDuty = false,
+    },
+    impound = {
+        label = 'Impound Lot',
+        blipLabel = 'Impound',
+        blipSprite = 67,
+        blipColor = 5,
+        shows = 'impounded',
+        allowStore = false,
+    },
+}
+
+Config.garages = {
+    legionsquare = {
+        type = 'public',
+        label = 'Legion Square Parking',
+        coords = vector4(211.52, -802.16, 30.89, 341.39),
+        spawns = {
+            vector4(207.56, -798.5, 29.98, 240.03),
+            vector4(208.2, -796.03, 29.96, 246.9),
+            vector4(209.11, -793.78, 29.94, 250.87),
+            vector4(210.64, -791.31, 29.91, 243.7),
+            vector4(211.37, -789.13, 29.89, 249.9),
+            vector4(212.11, -786.52, 29.88, 250.0),
+            vector4(213.17, -783.58, 29.87, 248.2),
+            vector4(213.8, -781.26, 29.87, 250.28),
+            vector4(215.06, -778.5, 29.85, 249.45),
+            vector4(216.01, -776.44, 29.83, 253.74)
+
+        },
+        bucket = 0,
+    },
+    motel = {
+        type = 'public',
+        label = 'Pink Cage Motel Parking',
+        coords = vector4(273.4, -343.2, 45.1, 159.0),
+        spawns = {
+            vector4(267.15, -332.51, 43.92, 249.31),
+            vector4(268.25, -329.33, 43.92, 249.77),
+            vector4(269.63, -326.09, 43.92, 250.2),
+            vector4(270.94, -322.96, 43.92, 251.83),
+            vector4(272.34, -319.82, 43.92, 252.46),
+            vector4(281.9, -323.4, 43.92, 70.64),
+            vector4(280.82, -326.54, 43.92, 70.64),
+            vector4(279.52, -329.78, 43.92, 70.64),
+            vector4(278.14, -333.03, 43.92, 70.64),
+            vector4(277.05, -336.17, 43.92, 70.64),
+            vector4(275.56, -339.7, 43.92,  70.64),
+        },
+        bucket = 0,
+    },
+    sandyshores = {
+        type = 'public',
+        label = 'Sandy Shores Parking',
+        coords = vector4(1728.8, 3712.0, 34.2, 22.0),
+        spawns = {
+            vector4(1735.0, 3714.3, 34.1, 22.0),
+            vector4(1738.0, 3717.0, 34.1, 22.0),
+        },
+        bucket = 0,
+    },
+    missionrow = {
+        type = 'job',
+        job = 'police',
+        label = 'Mission Row Motor Pool',
+        coords = vector4(456.01, -1017.22, 28.40, 89.70),
+        spawns = {
+            vector4(446.5, -1019.5, 27.7, 90.0),
+            vector4(446.5, -1024.5, 27.7, 90.0),
+        },
+        categories = { 'emergency', 'sedans', 'suvs' },
+        bucket = 0,
+    },
+    ballas = {
+        type = 'gang',
+        gang = 'ballas',
+        label = 'Forum Drive Lockup',
+        coords = vector4(85.0, -1959.7, 21.1, 320.0),
+        spawns = {
+            vector4(92.3, -1958.5, 20.7, 320.0),
+        },
+        bucket = 0,
+    },
+    impoundlot = {
+        type = 'impound',
+        label = 'Davis Impound Lot',
+        coords = vector4(409.9, -1622.9, 29.3, 230.0),
+        spawns = {
+            vector4(403.5, -1627.5, 29.2, 230.0),
+            vector4(406.0, -1631.0, 29.2, 230.0),
+        },
+        bucket = 0,
+    },
+}
+
+Config.houseGarages = {
+    query = 'SELECT * FROM houselocations WHERE garage IS NOT NULL',
+    bucket = 0,      -- routing bucket house garages sit in
+    blip = false,    -- one blip per house garage would flood the map
+}
+
+Config.impound = {
+    defaultFee = 500,
+    maxFee = 100000, -- ceiling so a bad impound write can't bankrupt someone
+    account = 'bank',
+    reason = 'impound-fee',
+}
+
+Config.spawn = {
+    clearance = 3.0,          -- metres a spawn point must be clear to be used
+    warpIntoVehicle = false,  -- put the player straight into the driver's seat
+    applyMods = true,         -- reapply the stored cosmetic mods on take-out
+    timeout = 10000,          -- ms the client may take to see the spawned vehicle before the take-out is cancelled (state stays garaged)
+}
+
+-- false: parking never changes the stored look; Config.mods.cosmetic (plus every mod* slot and
+-- numeric mod 0-49) is kept from the database so unpaid previews (paint, tint) are not saved.
+-- true: save whatever the client sends.
+Config.TrustClientCosmetics = false
+
+-- With TrustClientCosmetics off, a vehicle with no stored look yet (dealership rows have no props):
+-- false: parking it stores no cosmetics; only a paid order (kora_customs) stores a look, and until
+--        then it spawns with the game's default look for its model, which may pick another colour.
+-- true:  the first park records the look the client sends, as before; an unpaid customs preview
+--        still on the car at that moment would be saved with it.
+Config.SaveUnstoredLook = false
+
+-- true: parking a vehicle in a non-property garage records that garage on the vehicle (player_vehicles.garage_id / garage),
+--       so the phone Garage app shows where it was parked instead of "Unknown garage".
+-- false: only property garages record a garage.
+Config.RecordGarageId = true
+
+Config.mods = {
+    cosmetic = {
+        'plateIndex', 'color1', 'color2', 'pearlescentColor', 'dashboardColor',
+        'wheelColor', 'wheels', 'wheelSize', 'wheelWidth', 'windowTint',
+        'neonEnabled', 'neonColor', 'interiorColor', 'extras', 'tyreSmokeColor',
+        'xenonColor', 'modXenon', 'modFrontWheels', 'modBackWheels',
+        'modCustomTiresF', 'modCustomTiresR', 'modLivery', 'liveryRoof',
+        'modSpoilers', 'modFrontBumper', 'modRearBumper', 'modSideSkirt',
+        'modExhaust', 'modFrame', 'modGrille', 'modHood', 'modFender',
+        'modRightFender', 'modRoof', 'modHorns', 'modPlateHolder',
+        'modVanityPlate', 'modTrimA', 'modOrnaments', 'modDashboard', 'modDial',
+        'modDoorSpeaker', 'modSeats', 'modSteeringWheel', 'modShifterLeavers',
+        'modAPlate', 'modSpeakers', 'modTrunk', 'modHydrolic', 'modEngineBlock',
+        'modAirFilter', 'modStruts', 'modArchCover', 'modAerials', 'modTrimB',
+        'modTank', 'modWindows', 'wheelType', 'livery', 'oldLivery', 'paintType1',
+        'paintType2', 'color1Custom', 'color2Custom', 'customPrimaryColor',
+        'customSecondaryColor', 'headlightColor', 'neonColors', 'xenonColour',
+    },
+    entryCap = 80, -- more keys than this and the whole blob is dropped
+}
+
+Config.listing = {
+    max = 50,             -- vehicles shown per garage panel
+    healthScale = 1000.0, -- kora_core stores engine/body health on a 0-1000 scale
+}
+
+Config.ui = {
+    accent = false, -- '#RRGGBB' to override kora_theme's colour, or false to follow it
+}
+
+if Kora and Kora.config and Kora.config.adopt then Config = Kora.config.adopt(Config) end
