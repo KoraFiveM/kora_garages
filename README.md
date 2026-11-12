@@ -95,3 +95,5 @@ resource). A per-frame `DrawMarker` loop runs only while the player is within
 | `houseGarages` | `false` | Also mark property garages |
 
 Set `noMarker = true` on a garage entry to skip it. Run `lua test/markers.lua`.
+
+Full documentation: see [docs/](docs/index.md).
