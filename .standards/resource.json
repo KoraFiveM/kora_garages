@@ -1,0 +1,52 @@
+{
+  "resource": "kora_garages",
+  "standardsRevision": "2026-11-12.2",
+  "realms": {
+    "client": [
+      "client/client.lua",
+      "client/compat.lua"
+    ],
+    "server": [
+      "server/compat.lua",
+      "server/property.lua",
+      "server/schema.lua",
+      "server/server.lua"
+    ],
+    "shared": [
+      "shared/config.lua"
+    ],
+    "manifest": [
+      "fxmanifest.lua"
+    ],
+    "test": [
+      "test/client.lua",
+      "test/compat.lua",
+      "test/legacy-housing.lua",
+      "test/markers.lua",
+      "test/property.lua"
+    ]
+  },
+  "exclude": [
+    ".git/*",
+    ".github/*",
+    ".standards/*",
+    "node_modules/*",
+    "**/node_modules/*",
+    "vendor/*",
+    "**/vendor/*",
+    "web/*",
+    "ui/*",
+    "html/*",
+    "dist/*",
+    "artifacts/*",
+    "runtime/*",
+    "txData/*",
+    "storage/*",
+    "stream/*",
+    "docs/*",
+    "__pycache__/*",
+    "modules/lookup/data/*"
+  ],
+  "project": "Kora Framework",
+  "copyright": "Copyright © 2026 Kora Framework"
+}
