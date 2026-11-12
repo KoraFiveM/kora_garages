@@ -11,7 +11,7 @@ sidebar_position: 2
 
 | Resource | Used for |
 | --- | --- |
-| `kora_theme` | Declared in the manifest; no direct use in this resource's code |
+| `kora_theme` | Declared in the manifest. Not referenced in Lua code; per the `Config.ui.accent` comment the UI accent colour follows the theme unless `accent` is set |
 | `kora_lib` | `Kora.callback`, `Kora.nui`, `Kora.notify`, `Kora.zones`, `Kora.interact`, `Kora.blips`, `Kora.vehicle`, `Kora.distance`, `Kora.sql` helpers |
 | `kora_core` | Player data, job and gang, owned vehicles (`getByOwner`, `getByPlate`, `storeVehicle`, `spawnVehicle`), money, shared vehicle data |
 | `kora_target` | Interaction zones |
