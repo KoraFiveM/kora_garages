@@ -1,6 +1,6 @@
 ---
 title: Configuration
-sidebar_position: 3
+sidebar_position: 6
 ---
 
 # Configuration
@@ -101,7 +101,7 @@ Shipped examples: `legionsquare`, `motel`, `sandyshores` (public), `missionrow` 
 | `mods.cosmetic` | list of keys | Keys kept from the database when protection is on |
 | `mods.entryCap` | `80` | Not read by code (the server instead rejects mods whose JSON exceeds 131072 bytes) |
 
-See [Using garages](./usage.md#cosmetic-protection).
+See [Using garages](./how-to-use.md#cosmetic-protection).
 
 ## Other
 

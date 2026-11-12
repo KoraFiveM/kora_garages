@@ -16,7 +16,7 @@ The manifest has `provide 'qb-garages'`.
 
 ## Legacy houselocations
 
-At start the server checks `information_schema` for a `houselocations` table. If present, each row with a JSON `garage` coordinate becomes a `private` garage `house_<name>`, with no job or property policy. Modern housing should register property garages instead ([Exports](./exports.md)). House garages get no blip unless `Config.houseGarages.blip` is true.
+At start the server checks `information_schema` for a `houselocations` table. If present, each row with a JSON `garage` coordinate becomes a `private` garage `house_<name>`, with no job or property policy. Modern housing should register property garages instead ([Exports](./api/exports.md)). House garages get no blip unless `Config.houseGarages.blip` is true.
 
 ## Vehicle id state bag
 
