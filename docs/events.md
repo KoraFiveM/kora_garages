@@ -18,7 +18,7 @@ sidebar_position: 7
 | `kora_garages:store` | garageId, plate, netId, fuel, mods | `true` or `false, message` |
 | `qb-garages:server:GetPlayerVehicles` | none | Stock qb-garages vehicle list; see [Compatibility](./compatibility.md) |
 
-All garage callbacks validate on the server; see [Using garages](./usage.md).
+All garage callbacks validate on the server; see [Using garages](./how-to-use.md).
 
 ## Client net events
 
