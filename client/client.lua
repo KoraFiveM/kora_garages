@@ -5,7 +5,7 @@ local markerNear = {}
 local markerLoopRunning = false
 
 local function notify(message, kind)
-    Kora.notify.send({ title = 'Garage', message = message, type = kind or 'error' })
+    Kora.notify.send({ title = Kora.lang('Garage.title'), message = message, type = kind or 'error' })
 end
 
 local function toVec3(coords)
@@ -74,26 +74,26 @@ end
 
 local function takeOut(garageId, plate)
     local result, err = Kora.callback.trigger('kora_garages:takeOut', garageId, plate)
-    if not result then return notify(err or 'You cannot take that out.') end
+    if not result then return notify(err or Kora.lang('Garage.cannot_take_out')) end
 
     local entity = waitForEntity(result.netId, result.timeout)
     if not entity then
         Kora.callback.trigger('kora_garages:cancelOut', plate)
-        return notify('Your vehicle did not spawn, it is still in the garage.')
+        return notify(Kora.lang('Garage.vehicle_did_not_spawn_stored'))
     end
 
     local confirmed, confirmErr = Kora.callback.trigger('kora_garages:confirmOut', plate, result.netId)
-    if not confirmed then return notify(confirmErr or 'Your vehicle did not spawn.') end
+    if not confirmed then return notify(confirmErr or Kora.lang('Garage.vehicle_did_not_spawn')) end
 
     applyMods(entity, result.mods)
     if Config.spawn.warpIntoVehicle then SetPedIntoVehicle(PlayerPedId(), entity, -1) end
 
-    notify(('%s is ready.'):format(plate), 'success')
+    notify(Kora.lang('Garage.vehicle_ready', plate), 'success')
 end
 
 local function store(garageId, plate)
     local entity = findVehicle(plate)
-    if not entity then return notify('That vehicle is not here.') end
+    if not entity then return notify(Kora.lang('Garage.vehicle_not_here')) end
 
     local ped = PlayerPedId()
     if GetVehiclePedIsIn(ped, false) == entity then
@@ -103,25 +103,25 @@ local function store(garageId, plate)
 
     -- mods live behind client-only natives; the server treats them as untrusted
     local stored, err = Kora.callback.trigger('kora_garages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
-    if not stored then return notify(err or 'You cannot store that here.') end
+    if not stored then return notify(err or Kora.lang('Garage.cannot_store')) end
 
-    notify(('%s is parked.'):format(plate), 'success')
+    notify(Kora.lang('Garage.vehicle_parked', plate), 'success')
 end
 
 local function describe(vehicle, policy)
     if vehicle.state == 'impounded' then
         local fee = tonumber(vehicle.fee) or Config.impound.defaultFee
-        return 'Impounded', ('Pay $%d & release'):format(fee), 'lock'
+        return Kora.lang('Garage.impounded'), Kora.lang('Garage.release_fee', fee), 'lock'
     end
     if vehicle.state == 'out' then
-        return 'Out on the street', policy.allowStore ~= false and 'Store' or nil, 'car-front'
+        return Kora.lang('Garage.out_on_street'), policy.allowStore ~= false and Kora.lang('Garage.store') or nil, 'car-front'
     end
-    return 'In the garage', 'Take out', 'car-front'
+    return Kora.lang('Garage.in_garage'), Kora.lang('Garage.take_out'), 'car-front'
 end
 
 local function getModelName(model)
     local veh = exports.kora_core:getShared('vehicles', model)
-    return veh and veh.name or 'Unknown Vehicle'
+    return veh and veh.name or Kora.lang('Garage.unknown_vehicle')
 end
 
 local function openGarage(garageId)
@@ -129,7 +129,7 @@ local function openGarage(garageId)
 
     CreateThread(function()
         local payload, err = Kora.callback.trigger('kora_garages:list', garageId)
-        if not payload then return notify(err or 'You cannot use this garage.') end
+        if not payload then return notify(err or Kora.lang('Garage.cannot_use')) end
 
         local garage = payload.garage
         local policy = Config.garageTypes[garage.type] or {}
@@ -153,20 +153,20 @@ local function openGarage(garageId)
         Kora.nui.registerApp({
             id = 'kora_garages:garage',
             title = garage.label,
-            description = policy.label or 'Garage',
+            description = policy.label or Kora.lang('Garage.title'),
             icon = impound and 'lock' or 'warehouse',
             accent = type(Config.ui.accent) == 'string' and Config.ui.accent or nil,
             layout = 'standard',
             width = 1200, height = 850,
             navigation = {
-                { id = 'vehicles', label = 'Vehicles', icon = 'car-front', badge = #items,
+                { id = 'vehicles', label = Kora.lang('Garage.vehicles'), icon = 'car-front', badge = #items,
                     content = {
                         title = garage.label,
-                        description = 'Select a vehicle.',
+                        description = Kora.lang('Garage.select_vehicle'),
                         blocks = {
-                            { type = 'list', id = 'garage-vehicles', title = 'Your vehicles', layout = 'cards', cardStyle = 'media', columns = 3,
+                            { type = 'list', id = 'garage-vehicles', title = Kora.lang('Garage.your_vehicles'), layout = 'cards', cardStyle = 'media', columns = 3,
                                 searchable = true, pageSize = 9, items = items,
-                                empty = impound and 'Nothing of yours is being held here.' or 'You have no vehicles at this garage.' },
+                                empty = impound and Kora.lang('Garage.nothing_impounded') or Kora.lang('Garage.no_vehicles') },
                         },
                     },
                 },
@@ -183,7 +183,7 @@ local function openGarage(garageId)
                         if vehicle.state == 'out' then store(garageId, plate) else takeOut(garageId, plate) end
                     end)
                     busy = false
-                    if not ok then notify('Something went wrong.') end
+                    if not ok then notify(Kora.lang('Garage.something_went_wrong')) end
                 end)
 
                 return {}
@@ -266,7 +266,7 @@ local function addZone(id, garage)
 
     Kora.interact.addBoxZone(('kora_garages:%s'):format(id), toVec3(garage.coords), toVec3(garage.size or Config.interaction.zoneSize), {
         {
-            label = (impound and 'Collect from %s' or 'Open %s'):format(garage.label),
+            label = Kora.lang(impound and 'Garage.collect_from' or 'Garage.open', garage.label),
             icon = impound and 'car-front' or 'warehouse',
             canInteract = function() return mayUse(garage) end,
             action = function() openGarage(id) end,
@@ -276,7 +276,7 @@ local function addZone(id, garage)
 end
 
 exports('openGarage', function(id)
-    if not Config.garages[id] or Config.garages[id].disabled then return false, 'Garage is unavailable.' end
+    if not Config.garages[id] or Config.garages[id].disabled then return false, Kora.lang('Garage.garage_unavailable') end
     openGarage(id)
     return true
 end)

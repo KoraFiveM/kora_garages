@@ -4,7 +4,7 @@ lua54 'yes'
 
 name 'kora_garages'
 provide 'qb-garages'
-author 'qbcore2'
+author 'Kora'
 version '0.2.1'
 description 'Player-owned vehicle garages: store/retrieve, job and gang fleets, private house garages, and an impound lot with a fee'
 
@@ -36,3 +36,7 @@ client_scripts {
 
 -- kora_qa: Gherkin test scenarios (converted legacy tests), see [kora]/kora_qa/README.md
 qa_feature 'tests/*.feature'
+
+files {
+    'locales/*.lua'
+}

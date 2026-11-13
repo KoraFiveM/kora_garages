@@ -34,10 +34,10 @@ end
 
 function Property.authorize(src, id, action)
     local garage, policy = Config.garages[id], Property.records[id]
-    if not Property.ready or not garage or garage.disabled or not policy then return false, 'Property garage access is unavailable.' end
-    if action == 'store' and garage.retrievalOnly then return false, 'This garage only permits vehicle recovery.' end
+    if not Property.ready or not garage or garage.disabled or not policy then return false, Kora.lang('Garage.property_access_unavailable') end
+    if action == 'store' and garage.retrievalOnly then return false, Kora.lang('Garage.recovery_only') end
     local ok, allowed = pcall(policy.callback, src, action, id)
-    if not ok or allowed ~= true then return false, 'You cannot use this property garage.' end
+    if not ok or allowed ~= true then return false, Kora.lang('Garage.cannot_use_property') end
     return true
 end
 
@@ -46,11 +46,11 @@ function Property.reserved(vehicle)
 end
 
 local function withWrite(id, plate, handler)
-    if writes[id] or writes[plate] then return false, 'Garage is busy. Try again.' end
+    if writes[id] or writes[plate] then return false, Kora.lang('Garage.busy_try_again') end
     writes[id], writes[plate] = true, true
     local result = table.pack(pcall(handler))
     writes[id], writes[plate] = nil, nil
-    if not result[1] then return false, 'Garage operation failed.' end
+    if not result[1] then return false, Kora.lang('Garage.operation_failed') end
     return table.unpack(result, 2, result.n)
 end
 
@@ -100,30 +100,30 @@ function Property.store(src, id, vehicle, netId, fuel, mods, recovered)
         local garage = Config.garages[id]
         local allowed, err
         if recovered then
-            if not garage or garage.property or garage.type ~= 'public' or vehicle.state ~= 'out' or not Property.reserved(vehicle) then return false, 'Vehicle recovery is unavailable.' end
+            if not garage or garage.property or garage.type ~= 'public' or vehicle.state ~= 'out' or not Property.reserved(vehicle) then return false, Kora.lang('Garage.property_recovery_unavailable') end
         else
             allowed, err = Property.authorize(src, id, 'store')
             if not allowed then return false, err end
         end
         local entity = tonumber(netId) and NetworkGetEntityFromNetworkId(tonumber(netId))
-        if not entity or entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2 then return false, 'Vehicle is unavailable.' end
+        if not entity or entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2 then return false, Kora.lang('Garage.vehicle_unavailable') end
         local plate = Kora.vehicle.normalizePlate(GetVehicleNumberPlateText(entity), { whitespace = 'remove' })
-        if plate ~= Kora.vehicle.normalizePlate(vehicle.plate, { whitespace = 'remove' }) then return false, 'Vehicle plate does not match.' end
-        if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, 'Vehicle is in another routing bucket.' end
-        if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
-        if not Kora.distance.player(src, garage.coords, Config.interaction.distance) then return false, 'Too far from garage.' end
-        if isVehicleOccupied(entity, src) then return false, 'Vehicle is occupied.' end
-        if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
-        if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
+        if plate ~= Kora.vehicle.normalizePlate(vehicle.plate, { whitespace = 'remove' }) then return false, Kora.lang('Garage.plate_mismatch') end
+        if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, Kora.lang('Garage.different_bucket') end
+        if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, Kora.lang('Garage.vehicle_too_far') end
+        if not Kora.distance.player(src, garage.coords, Config.interaction.distance) then return false, Kora.lang('Garage.too_far') end
+        if isVehicleOccupied(entity, src) then return false, Kora.lang('Garage.vehicle_occupied') end
+        if not finite(fuel) or fuel < 0 or fuel > 100 then return false, Kora.lang('Garage.invalid_fuel') end
+        if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, Kora.lang('Garage.invalid_modifications') end
         mods = Property.resolveMods(vehicle, mods)
         if not recovered then
             local rows, queryErr = Kora.sql.query('SELECT `citizenid` FROM `player_vehicles` WHERE `garage_id`=? AND `state`=\'garaged\' AND `deleted_at` IS NULL', { id })
-            if not rows or queryErr then return false, queryErr or 'Garage storage is unavailable.' end
+            if not rows or queryErr then return false, queryErr or Kora.lang('Garage.garage_storage_unavailable') end
             local count, owners = 0, garage.capacityOwnerIds
             local ownerSet
             if owners then ownerSet = {}; for _, cid in ipairs(owners) do ownerSet[cid] = true end end
             for _, row in ipairs(rows) do if not ownerSet or ownerSet[row.citizenid] then count = count + 1 end end
-            if count >= garage.slots then return false, 'Property garage is full.' end
+            if count >= garage.slots then return false, Kora.lang('Garage.property_garage_full') end
             allowed, err = Property.authorize(src, id, 'store')
             if not allowed then return false, err end
         end
@@ -147,7 +147,7 @@ function Property.takeOut(src, id, vehicle, spawn)
     return withWrite(id, vehicle.plate, function()
         local allowed, err = Property.authorize(src, id, 'retrieve')
         if not allowed then return false, err end
-        if vehicle.garage_id ~= id then return false, 'Vehicle is stored at another garage.' end
+        if vehicle.garage_id ~= id then return false, Kora.lang('Garage.vehicle_stored_elsewhere') end
         local networkId, spawnErr = exports.kora_core:spawnVehicle(src, vehicle.plate, spawn, spawn.w or 0.0, vehicle.citizenid)
         if not networkId then return false, spawnErr end
         local entity = NetworkGetEntityFromNetworkId(networkId)
@@ -158,18 +158,18 @@ function Property.takeOut(src, id, vehicle, spawn)
 end
 
 exports('RegisterPropertyGarage', function(id, raw, callback)
-    if not Property.ready then return false, 'Property garage persistence is unavailable.' end
-    if not Kora.compat.isCallable(callback) then return false, 'Garage policy must be callable.' end
+    if not Property.ready then return false, Kora.lang('Garage.property_persistence_unavailable') end
+    if not Kora.compat.isCallable(callback) then return false, Kora.lang('Garage.garage_policy_callable') end
     local owner = GetInvokingResource() or GetCurrentResourceName()
-    if Property.known[id] and Property.known[id] ~= owner then return false, 'Garage belongs to another resource.' end
-    if Config.garages[id] and not Property.known[id] then return false, 'Garage id already exists.' end
+    if Property.known[id] and Property.known[id] ~= owner then return false, Kora.lang('Garage.garage_owned_elsewhere') end
+    if Config.garages[id] and not Property.known[id] then return false, Kora.lang('Garage.garage_id_exists') end
     local garage, err = definition(id, raw)
     if not garage then return false, err end
     return withWrite(id, 'registration:' .. id, function()
         local saved, saveErr
         if Property.known[id] then
             saved, saveErr = Kora.sql.update('UPDATE `kora_garages_property_garages` SET `definition`=? WHERE `id`=? AND `provider`=?', { json.encode(garage), id, owner })
-            if saved ~= 1 then return false, saveErr or 'Garage registration changed.' end
+            if saved ~= 1 then return false, saveErr or Kora.lang('Garage.garage_registration_changed') end
         else
             saved, saveErr = Kora.sql.execute('INSERT INTO `kora_garages_property_garages` (`id`,`provider`,`definition`) VALUES (?,?,?)', { id, owner, json.encode(garage) })
             if not saved then return false, saveErr end
@@ -181,7 +181,7 @@ exports('RegisterPropertyGarage', function(id, raw, callback)
 end)
 
 exports('UnregisterPropertyGarage', function(id)
-    if Property.known[id] ~= (GetInvokingResource() or GetCurrentResourceName()) then return false, 'Garage is not owned by this resource.' end
+    if Property.known[id] ~= (GetInvokingResource() or GetCurrentResourceName()) then return false, Kora.lang('Garage.garage_not_owned') end
     Property.records[id] = nil
     if Config.garages[id] then Config.garages[id].disabled = true end
     TriggerClientEvent('kora_garages:propertyRemoved', -1, id)

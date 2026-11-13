@@ -58,8 +58,8 @@ local function finite(value) return type(value) == 'number' and value == value a
 local function ownsVehicle(src, plate)
     local citizenid = exports.kora_core:getPlayerData(src, { 'citizenid' })
     local vehicle = exports.kora_core:getByPlate(plate)
-    if not vehicle then return nil, 'That vehicle does not exist' end
-    if vehicle.citizenid ~= citizenid then return nil, 'That is not your vehicle' end
+    if not vehicle then return nil, Kora.lang('Garage.vehicle_not_exist') end
+    if vehicle.citizenid ~= citizenid then return nil, Kora.lang('Garage.not_your_vehicle') end
     return vehicle
 end
 
@@ -81,9 +81,9 @@ end
 
 Kora.callback.register('kora_garages:list', function(src, garageId)
     local garage = Config.garages[garageId]
-    if not garage then return false, 'Unknown garage' end
-    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
-    if not canUseGarage(src, garage, garageId, 'list') then return false, 'You cannot use this garage' end
+    if not garage then return false, Kora.lang('Garage.unknown_garage') end
+    if not nearGarage(src, garage) then return false, Kora.lang('Garage.too_far') end
+    if not canUseGarage(src, garage, garageId, 'list') then return false, Kora.lang('Garage.cannot_use') end
 
     local citizenid = exports.kora_core:getPlayerData(src, { 'citizenid' })
     local vehicles = exports.kora_core:getByOwner(citizenid) or {}
@@ -141,22 +141,22 @@ end
 
 Kora.callback.register('kora_garages:takeOut', function(src, garageId, plate)
     local garage = Config.garages[garageId]
-    if not garage then return false, 'Unknown garage' end
-    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
-    if not canUseGarage(src, garage, garageId, 'retrieve') then return false, 'You cannot use this garage' end
+    if not garage then return false, Kora.lang('Garage.unknown_garage') end
+    if not nearGarage(src, garage) then return false, Kora.lang('Garage.too_far') end
+    if not canUseGarage(src, garage, garageId, 'retrieve') then return false, Kora.lang('Garage.cannot_use') end
 
     local vehicle, err = ownsVehicle(src, plate)
     if not vehicle then return false, err end
 
-    if vehicle.state == 'out' then return false, 'That vehicle is already out' end
-    if vehicle.state == 'impounded' and garage.type ~= 'impound' then return false, 'That vehicle is impounded' end
+    if vehicle.state == 'out' then return false, Kora.lang('Garage.vehicle_already_out') end
+    if vehicle.state == 'impounded' and garage.type ~= 'impound' then return false, Kora.lang('Garage.vehicle_impounded') end
 
     local spawn = pickSpawn(garage)
-    if not spawn then return false, 'There is no free spot to bring that out' end
+    if not spawn then return false, Kora.lang('Garage.no_free_spawn') end
     if garage.property then return PropertyGarages.takeOut(src, garageId, vehicle, spawn) end
-    if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
+    if PropertyGarages.reserved(vehicle) then return false, Kora.lang('Garage.property_recovery') end
 
-    if pendingOut[plate] then return false, 'That vehicle is already being brought out' end
+    if pendingOut[plate] then return false, Kora.lang('Garage.already_being_brought_out') end
 
     -- Claim the plate before the yielding spawn wait below: CreateVehicleServerSetter
     -- plus the Wait(10) loop lets a second takeOut call for the same plate run on this
@@ -172,7 +172,7 @@ Kora.callback.register('kora_garages:takeOut', function(src, garageId, plate)
     if not DoesEntityExist(entity) or pending.cancelled then
         if pendingOut[plate] == pending then pendingOut[plate] = nil end
         if DoesEntityExist(entity) then DeleteEntity(entity) end
-        return false, 'Could not spawn that vehicle'
+        return false, Kora.lang('Garage.could_not_spawn')
     end
 
     SetEntityRoutingBucket(entity, GetPlayerRoutingBucket(src))
@@ -191,11 +191,11 @@ end)
 
 Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
     local pending = pendingOut[plate]
-    if not pending or pending.src ~= src or not pending.entity then return false, 'That vehicle is no longer being brought out' end
+    if not pending or pending.src ~= src or not pending.entity then return false, Kora.lang('Garage.no_longer_being_brought_out') end
     local entity, vehicle = pending.entity, pending.vehicle
     if not DoesEntityExist(entity) or NetworkGetNetworkIdFromEntity(entity) ~= netId then
         discardPending(plate)
-        return false, 'Could not spawn that vehicle'
+        return false, Kora.lang('Garage.could_not_spawn')
     end
     pendingOut[plate] = nil
 
@@ -204,7 +204,7 @@ Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
         local paid = exports.kora_core:removeMoney(src, 'cash', fee, 'impound-fee')
         if not paid then
             DeleteEntity(entity)
-            return false, ('You need $%d to release this vehicle'):format(fee)
+            return false, Kora.lang('Garage.release_requires_money', fee)
         end
     end
 
@@ -213,7 +213,7 @@ Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
         -- DB write failed: don't hand out keys for a vehicle the DB still thinks is
         -- garaged, or a second takeOut could spawn a dupe of the same stored row.
         DeleteEntity(entity)
-        return false, 'Could not spawn that vehicle'
+        return false, Kora.lang('Garage.could_not_spawn')
     end
     tagVehicle(entity, vehicle.id)
     exports.kora_vehiclekeys:giveKeys(src, plate)
@@ -240,11 +240,11 @@ end
 
 Kora.callback.register('kora_garages:store', function(src, garageId, plate, netId, fuel, mods)
     local garage = Config.garages[garageId]
-    if not garage then return false, 'Unknown garage' end
-    if not nearGarage(src, garage) then return false, 'Too far from the garage' end
+    if not garage then return false, Kora.lang('Garage.unknown_garage') end
+    if not nearGarage(src, garage) then return false, Kora.lang('Garage.too_far') end
     -- list/takeOut both gate on canUseGarage; store was missing it, letting anyone
     -- store their own vehicle into a job/gang-restricted garage without membership.
-    if not canUseGarage(src, garage, garageId, 'store') then return false, 'You cannot use this garage' end
+    if not canUseGarage(src, garage, garageId, 'store') then return false, Kora.lang('Garage.cannot_use') end
 
     local vehicle, err = ownsVehicle(src, plate)
     if not vehicle then return false, err end
@@ -253,28 +253,28 @@ Kora.callback.register('kora_garages:store', function(src, garageId, plate, netI
     if PropertyGarages.reserved(vehicle) and vehicle.state == 'out' and garage.type == 'public' and canUseGarage(src, garage, garageId, 'store') then
         return PropertyGarages.store(src, garageId, vehicle, netId, fuel, mods, true)
     end
-    if PropertyGarages.reserved(vehicle) then return false, 'Use the property garage or its recovery service.' end
+    if PropertyGarages.reserved(vehicle) then return false, Kora.lang('Garage.property_recovery') end
 
     local entity = NetworkGetEntityFromNetworkId(tonumber(netId))
     if not entity or entity == 0 or not DoesEntityExist(entity) then
         entity = getVehicleByPlate(plate)
-        if not entity then return false, 'That vehicle is not here' end
+        if not entity then return false, Kora.lang('Garage.vehicle_not_here') end
     end
 
     -- A spoofed netId/plate must not let a client store (and delete) someone else's
     -- entity: verify it's actually a vehicle, actually carries this plate, in the
     -- player's own bucket, near enough, and unoccupied before touching it.
-    if GetEntityType(entity) ~= 2 then return false, 'That vehicle is not here' end
+    if GetEntityType(entity) ~= 2 then return false, Kora.lang('Garage.vehicle_not_here') end
     if GetVehicleNumberPlateText(entity):gsub('%s+', ''):upper() ~= plate:gsub('%s+', ''):upper() then
-        return false, 'Vehicle plate does not match.'
+        return false, Kora.lang('Garage.plate_mismatch')
     end
-    if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, 'Vehicle is in another routing bucket.' end
-    if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, 'Vehicle is too far away.' end
+    if GetEntityRoutingBucket(entity) ~= GetPlayerRoutingBucket(src) then return false, Kora.lang('Garage.different_bucket') end
+    if not Kora.distance.player(src, GetEntityCoords(entity), Config.interaction.storeDistance) then return false, Kora.lang('Garage.vehicle_too_far') end
     for _, player in ipairs(GetPlayers()) do
-        if tonumber(player) ~= src and GetVehiclePedIsIn(GetPlayerPed(player), false) == entity then return false, 'Vehicle is occupied.' end
+        if tonumber(player) ~= src and GetVehiclePedIsIn(GetPlayerPed(player), false) == entity then return false, Kora.lang('Garage.vehicle_occupied') end
     end
-    if not finite(fuel) or fuel < 0 or fuel > 100 then return false, 'Invalid fuel snapshot.' end
-    if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, 'Invalid vehicle modifications.' end
+    if not finite(fuel) or fuel < 0 or fuel > 100 then return false, Kora.lang('Garage.invalid_fuel') end
+    if mods ~= nil and (type(mods) ~= 'table' or #json.encode(mods) > 131072) then return false, Kora.lang('Garage.invalid_modifications') end
 
     local snapshot = {
         engineHealth = math.floor(GetVehicleEngineHealth(entity)),
@@ -307,11 +307,11 @@ local function removeVehicles(minutes)
 
     if minutes <= 0 then
         removeAll()
-        Kora.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+        Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
         return
     end
 
-    Kora.notify.send(-1, { title = 'ADMIN', message = ('All vehicles will be removed in %d minutes.'):format(minutes), type = 'info'})
+    Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed_in', minutes), type = 'info'})
 
     CreateThread(function()
         for time = minutes, 1, -1 do
@@ -319,14 +319,14 @@ local function removeVehicles(minutes)
 
             if time > 1 then
                 Kora.notify.send(-1, {
-                    title = 'ADMIN',
-                    message = ('All vehicles will be removed in %d minutes.'):format(time - 1),
+                    title = Kora.lang('Garage.admin'),
+                    message = Kora.lang('Garage.vehicles_removed_in', time - 1),
                     type = 'info'
                 })
             end
         end
         removeAll()
-        Kora.notify.send(-1, { title = 'ADMIN', message = 'All vehicles have been removed.', type = 'info'})
+        Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
     end)
 end
 
