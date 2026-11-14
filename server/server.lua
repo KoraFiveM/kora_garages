@@ -1,7 +1,13 @@
 local allVehs = {}
 PropertyGarages.entities = allVehs
 CreateThread(function()
-    -- Legacy housing is optional; kora_housing stores its properties in a different table.
+    -- Legacy housing is optional. When kora_housing is installed it owns the
+    -- stock tables (kora_sql treats them as archival) and registers its own
+    -- garages through RegisterPropertyGarage, so reading houselocations here
+    -- would fail or duplicate those garages without their access policy.
+    -- 'missing' is the only state that means it isn't installed; it may still
+    -- be 'stopped' here because it starts after kora_garages.
+    if GetResourceState('kora_housing') ~= 'missing' then return end
     local exists = Kora.sql.scalar('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { 'houselocations' })
     if not exists or exists == 0 then return end
 
