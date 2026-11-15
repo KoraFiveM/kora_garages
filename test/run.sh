@@ -8,3 +8,4 @@ cd "$dir/.."
 "${LUA:-lua}" test/compat.lua
 "${LUA:-lua}" test/client.lua
 "${LUA:-lua}" test/markers.lua
+"${LUA:-lua}" test/no_raw_print.lua

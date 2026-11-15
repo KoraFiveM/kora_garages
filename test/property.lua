@@ -48,11 +48,16 @@ local function setup(stored, opts)
     env.CreateThread = function(fn) f.threads[#f.threads + 1] = fn end
     env.AddEventHandler = function(name, fn) f.events[name] = fn end
     env.RegisterCommand, env.TriggerClientEvent, env.TriggerEvent = function() end, function() end, function() end
-    env.Kora = { compat = { isCallable = function(value) return type(value) == 'function' end },
+    f.logged = {}
+    env.Kora = { lang = function(key) return key end, logging = setmetatable({}, { __index = function(_, level)
+            return function(event, message, fields) f.logged[#f.logged + 1] = { level = level, event = event, message = message, fields = fields }; return true end
+        end }),
+        compat = { isCallable = function(value) return type(value) == 'function' end },
         distance = { player = function() return not f.tooFar end },
         callback = { register = function(name, fn) f.callbacks[name] = fn end }, sql = { NULL = 'NULL' } }
     local sql = env.Kora.sql
-    sql.ready, sql.ensureTables, sql.awaitTables = function() return true end, function() return {} end, function() return true end
+    sql.ready, sql.ensureTables, sql.awaitTables = function() return true end,
+        function() if opts and opts.schemaError then return nil, opts.schemaError end return {} end, function() return true end
     sql.single = function() return copy(f.vehicle) end
     sql.query = function(statement)
         if statement:find('kora_garages_property_garages', 1, true) then return stored or {} end
@@ -284,6 +289,14 @@ H.test('storing keeps the stored cosmetics unless the client is trusted', functi
     config.SaveUnstoredLook = nil
     config.TrustClientCosmetics = true
     H.assertEqual(resolve(row, client), client)
+end)
+
+H.test('a failed schema setup is logged through Kora.logging and stops loading stored garages', function()
+    local f = setup(nil, { schemaError = 'controlled schema failure' })
+    H.assertEqual(#f.logged, 1, 'exactly one log call')
+    H.assertEqual(f.logged[1].level, 'error', 'level')
+    H.assertEqual(f.logged[1].event, 'schema.setup_failed', 'stable event name')
+    H.assertEqual(f.logged[1].fields.error, 'controlled schema failure', 'fields carry the error')
 end)
 
 H.report('kora_garages property integration')
