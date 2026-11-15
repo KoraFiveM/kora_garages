@@ -150,6 +150,8 @@ Config.garages = {
 }
 
 Config.houseGarages = {
+    -- Stock qb-houses garages are only read when kora_housing is not installed;
+    -- kora_housing registers its own garages. (This query string is informational.)
     query = 'SELECT * FROM houselocations WHERE garage IS NOT NULL',
     bucket = 0,      -- routing bucket house garages sit in
     blip = false,    -- one blip per house garage would flood the map
