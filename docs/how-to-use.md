@@ -69,7 +69,7 @@ local ok, err = exports.kora_garages:RegisterPropertyGarage('house_123', {
     -- action is 'store', 'retrieve' or 'list'; return true to allow
     return exports.kora_housing:hasKeyToProperty(src, id)
 end)
-if not ok then print('garage registration failed:', err) end
+if not ok then Kora.logging.error('garage.registration_failed', 'Garage registration failed', { error = tostring(err) }) end
 ```
 
 - A public (non-property) garage can still act as a one-time "recovery" path for a vehicle whose `garage_id` points at a property garage: if the vehicle is `out` and the garage is `public`, `kora_garages:store` calls `PropertyGarages.store(..., recovered = true)`, which re-checks that specific condition instead of the owning resource's callback.

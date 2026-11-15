@@ -201,13 +201,19 @@ end)
 CreateThread(function()
     if not Kora.sql.ready(60000) then return end
     local ensured, schemaErr = Kora.sql.ensureTables(KoraGaragesSchema)
-    if not ensured then return print('[kora_garages] Schema setup failed: ' .. tostring(schemaErr)) end
+    if not ensured then
+        Kora.logging.error('schema.setup_failed', 'Schema setup failed', { error = tostring(schemaErr) })
+        return
+    end
     local rows, err = Kora.sql.query('SELECT `id`,`provider`,`definition` FROM `kora_garages_property_garages`')
     if not rows or err then return end
     for _, row in ipairs(rows) do
         local ok, raw = pcall(json.decode, row.definition)
         local garage = ok and definition(row.id, raw)
-        if not garage or Config.garages[row.id] then return print('[kora_garages] Invalid or conflicting property garage: ' .. tostring(row.id)) end
+        if not garage or Config.garages[row.id] then
+            Kora.logging.warn('garage.invalid_or_conflicting', 'Invalid or conflicting property garage', { garageId = tostring(row.id) })
+            return
+        end
         garage.disabled = true
         Property.known[row.id], Config.garages[row.id] = row.provider, garage
     end
