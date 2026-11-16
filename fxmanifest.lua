@@ -27,6 +27,7 @@ server_scripts {
     'server/property.lua',
     'server/server.lua',
     'server/compat.lua',
+    'server/owned.lua',
 }
 
 client_scripts {
