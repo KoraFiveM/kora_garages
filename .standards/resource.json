@@ -8,6 +8,7 @@
     ],
     "server": [
       "server/compat.lua",
+      "server/owned.lua",
       "server/property.lua",
       "server/schema.lua",
       "server/server.lua"
@@ -23,6 +24,7 @@
       "test/compat.lua",
       "test/legacy-housing.lua",
       "test/markers.lua",
+      "test/owned.lua",
       "test/property.lua"
     ]
   },
