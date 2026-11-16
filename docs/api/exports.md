@@ -8,13 +8,13 @@ sidebar_position: 2
 
 ## Server
 
-Server-side exports for registering property garages and for legacy qb-garages-shaped integrations.
+Server-side exports for registering property garages, listing owned vehicles and for legacy qb-garages-shaped integrations.
 
-Namespace: `exports.kora_garages` · Source: `server/property.lua, server/compat.lua`
+Namespace: `exports.kora_garages` · Source: `server/property.lua, server/owned.lua, server/compat.lua`
 
 ### Functions
 
-Three server exports.
+Four server exports.
 
 #### `exports.kora_garages:RegisterPropertyGarage(id, definition, callback)`
 
@@ -81,6 +81,35 @@ exports.kora_garages:UnregisterPropertyGarage('house_123')
 
 ```text
 Also runs automatically for every garage owned by a resource when that resource stops (`onResourceStop`). Marks the garage `disabled` and broadcasts `kora_garages:propertyRemoved`; it is not deleted from the database, so re-registering the same id restores it.
+```
+
+#### `exports.kora_garages:getOwnedVehicles(citizenid)`
+
+Server export (defined in `server/owned.lua`). Lists the vehicles a character owns, labelled for display. It yields while `kora_core` reads the vehicle table, so call it from a thread or callback. Only call it from trusted server code with a citizenid you resolved yourself; never pass a value a client sent.
+
+**Parameters**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `citizenid` | string | 1-50 characters. Anything else is rejected before any query. |
+
+**Returns**
+
+- **vehicles** — array sorted by plate, at most 200 rows, empty when the character owns none: `{ plate, model, label, garage, garageLabel, state, fuel, engine, body }`.
+  - `label` is `Brand Name` from the kora_core shared vehicles, or the model when it cannot be resolved.
+  - `garage` is the stored garage id (empty string when none). `garageLabel` is the configured garage label, `House` for an id that is not in `Config.garages`, and `None` when there is no garage.
+  - `state` is one of `out`, `garaged`, `impounded`, the only values kora_garages stores. Anything unexpected is reported as `out`.
+  - `fuel`, `engine`, `body` are numbers (0 when missing); `engine` and `body` are the stored health values.
+- **err** — `false, 'Invalid citizen id.'` for an invalid argument.
+
+**Example**
+
+```lua
+local vehicles, err = exports.kora_garages:getOwnedVehicles(citizenid)
+if not vehicles then return print(err) end
+for _, vehicle in ipairs(vehicles) do
+    print(vehicle.plate, vehicle.label, vehicle.garageLabel, vehicle.state)
+end
 ```
 
 #### `exports.kora_garages:getAllGarages()`
