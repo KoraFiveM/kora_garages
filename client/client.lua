@@ -102,7 +102,7 @@ local function store(garageId, plate)
     end
 
     -- mods live behind client-only natives; the server treats them as untrusted
-    local stored, err = Kora.callback.trigger('kora_garages:store', garageId, plate, NetworkGetNetworkIdFromEntity(entity), GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
+    local stored, err = Kora.callback.trigger('kora_garages:store', garageId, plate, NetworkGetEntityIsNetworked(entity) and NetworkGetNetworkIdFromEntity(entity) or 0, GetVehicleFuelLevel(entity), Kora.vehicle.getProperties(entity))
     if not stored then return notify(err or Kora.lang('Garage.cannot_store')) end
 
     notify(Kora.lang('Garage.vehicle_parked', plate), 'success')
