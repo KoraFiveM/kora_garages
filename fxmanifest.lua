@@ -5,7 +5,7 @@ lua54 'yes'
 name 'kora_garages'
 provide 'qb-garages'
 author 'Kora'
-version '0.2.1'
+version '0.2.2'
 description 'Player-owned vehicle garages: store/retrieve, job and gang fleets, private house garages, and an impound lot with a fee'
 
 dependency 'kora_theme'
