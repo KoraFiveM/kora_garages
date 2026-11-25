@@ -7,6 +7,7 @@
       "client/compat.lua"
     ],
     "server": [
+      "kora_versioncheck.lua",
       "server/compat.lua",
       "server/owned.lua",
       "server/property.lua",
