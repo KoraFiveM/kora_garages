@@ -41,3 +41,5 @@ qa_feature 'tests/*.feature'
 files {
     'locales/*.lua'
 }
+
+server_script 'kora_versioncheck.lua'
