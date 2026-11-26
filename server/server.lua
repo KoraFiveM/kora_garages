@@ -222,7 +222,7 @@ Kora.callback.register('kora_garages:confirmOut', function(src, plate, netId)
         return false, Kora.lang('Garage.could_not_spawn')
     end
     tagVehicle(entity, vehicle.id)
-    exports.kora_vehiclekeys:giveKeys(src, plate)
+    Kora.bridge.giveKeys(src, plate)
     allVehs[plate] = entity
     return true
 end)
@@ -313,18 +313,18 @@ local function removeVehicles(minutes)
 
     if minutes <= 0 then
         removeAll()
-        Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
+        Kora.bridge.sendNotify(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
         return
     end
 
-    Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed_in', minutes), type = 'info'})
+    Kora.bridge.sendNotify(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed_in', minutes), type = 'info'})
 
     CreateThread(function()
         for time = minutes, 1, -1 do
             Wait(60000)
 
             if time > 1 then
-                Kora.notify.send(-1, {
+                Kora.bridge.sendNotify(-1, {
                     title = Kora.lang('Garage.admin'),
                     message = Kora.lang('Garage.vehicles_removed_in', time - 1),
                     type = 'info'
@@ -332,7 +332,7 @@ local function removeVehicles(minutes)
             end
         end
         removeAll()
-        Kora.notify.send(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
+        Kora.bridge.sendNotify(-1, { title = Kora.lang('Garage.admin'), message = Kora.lang('Garage.vehicles_removed'), type = 'info'})
     end)
 end
 
