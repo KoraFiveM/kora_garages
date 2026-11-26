@@ -5,7 +5,7 @@ local markerNear = {}
 local markerLoopRunning = false
 
 local function notify(message, kind)
-    Kora.notify.send({ title = Kora.lang('Garage.title'), message = message, type = kind or 'error' })
+    Kora.bridge.sendNotify({ title = Kora.lang('Garage.title'), message = message, type = kind or 'error' })
 end
 
 local function toVec3(coords)
